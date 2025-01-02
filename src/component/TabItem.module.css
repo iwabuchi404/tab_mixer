@@ -1,0 +1,128 @@
+.tabItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.activeTab {}
+
+.activeTab::before {
+  position: absolute;
+  display: block;
+  content: "";
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background-color: #e2490c;
+  margin-left: -14px;
+}
+
+.tabItem+.tabItem {
+  margin-top: 8px;
+}
+
+.tabContent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  max-width: calc(100% - 36px);
+  padding: 0;
+  box-sizing: border-box;
+  transition: all .2s;
+}
+
+.favicon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 4px 6px;
+}
+
+.tabTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+  flex: 1;
+  max-width: 100%;
+  margin-left: -40px;
+  padding: 6px 6px;
+  padding-left: 40px;
+  font-size: 14px;
+  transition: all .2s;
+}
+
+.tabTitle:hover,
+.tabContent:hover {
+  text-decoration: none;
+}
+
+.tabContent:hover {
+  background-color: #ccd7ee;
+}
+
+.tabTitle:hover {
+  text-decoration: underline;
+}
+
+.closeButton {
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  margin: auto 6px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  border: #6b7280 solid 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  transition: all .2s;
+  position: relative;
+}
+
+.closeButton::after,
+.closeButton::before {
+  content: "";
+  display: block;
+  width: calc(100% - 4px);
+  height: 3px;
+  position: absolute;
+  margin: auto;
+  top: 50%;
+  left: 0;
+  right: 0;
+  background-color: #6b7280;
+  border-radius: 3px;
+  transition: all .2s;
+}
+
+.closeButton::after {
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.closeButton::before {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.closeButton:hover,
+.closeButton:focus {
+  color: #e2490c;
+  border-color: #e2490c;
+}
+
+.closeButton:hover::after,
+.closeButton:hover::before,
+.closeButton:focus::after,
+.closeButton:focus::before {
+  background-color: #e2490c;
+}
