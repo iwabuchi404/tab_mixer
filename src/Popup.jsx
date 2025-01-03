@@ -13,6 +13,10 @@ const Popup = () => {
     const allTabs = await chrome.tabs.query({});
     setallTabCount(allTabs.length);
 
+    // アクティブなタブを持つウィンドウを特定
+    const currentTab = await chrome.tabs.query({ active: true, currentWindow: true });
+    const activeWindowId = currentTab[0]?.windowId;
+
     // タブグループの情報を取得
     const groups = await chrome.tabGroups.query({});
     const groupsMap = groups.reduce((acc, group) => {
@@ -31,28 +35,13 @@ const Popup = () => {
           focused: false
         };
       }
-
-      // タブがグループに属している場合
-      // if (tab.groupId !== -1) {
-      //   if (!acc[tab.windowId].groups[tab.groupId]) {
-      //     acc[tab.windowId].groups[tab.groupId] = {
-      //       info: groupsMap[tab.groupId],
-      //       tabs: []
-      //     };
-      //   }
-      //   acc[tab.windowId].groups[tab.groupId].tabs.push(tab);
-      // } else {
-      //   // グループに属していないタブ
-      //   acc[tab.windowId].tabs.push(tab);
-      // }
-      // return acc;
-
       acc[tab.windowId].tabs.push(tab);
       return acc;
     }, {});
 
     // 各ウィンドウの focused 状態を取得
     const windows = await chrome.windows.getAll();
+
     windows.forEach(window => {
       if (tabsByWindow[window.id]) {
         tabsByWindow[window.id].focused = window.focused;
@@ -64,8 +53,14 @@ const Popup = () => {
       windowId: parseInt(windowId),
       groups: data.groups,
       tabs: data.tabs,
-      focused: data.focused
-    }));
+      focused: data.focused,
+      currentWindow: activeWindowId === parseInt(windowId)
+    })).sort((window) => {
+      return window.windowId == activeWindowId ? -1 : 1;
+    });
+
+    console.log('sortedWindows');
+    console.log(sortedWindows);
 
     setWindowTabs(sortedWindows);
   };
@@ -104,8 +99,9 @@ const Popup = () => {
           tabList={window.tabs}
           groups={groups}
           windowId={window.windowId}
-          listTitle={`ウィンドウID:${window.windowId}`}
-          focused={window.focused} />
+          listTitle={`Window ID:${window.windowId}`}
+          focused={window.focused}
+          currentWindow={window.currentWindow} />
       ))}
 
       <Footer windowCount={windowTabs.length} allTabCount={allTabCount} />

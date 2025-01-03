@@ -3,22 +3,20 @@ import React, { useState, useEffect } from 'react';  // Vue.jsでいう { ref, o
 import styles from './TabList.module.css';
 import TabItem from './TabItem';
 
-const TabList = ({ windowId, tabList, groups, listTitle }) => {
-  console.log('TabList.jsx');
-  console.log(groups);
+const TabList = ({ windowId, tabList, groups, listTitle, currentWindow }) => {
   return (
     <div className={styles.container}>
-      <h2 className={styles.header}>{listTitle} <span className={styles.count}>Tabs: {tabList.length}</span></h2>
+      <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''}`}> {listTitle} <span className={styles.count}>Tabs: {tabList.length}</span></h2>
       <div >
         {tabList.map((tab, index) => {
           if (tab.groupId !== -1) {
             if (tab.groupId !== tabList[index - 1].groupId) {
-              return <React.Fragment>
+              return <React.Fragment key={tab.id}>
                 <h3 className={styles.groupTitle}
                   style={{
                     '--group-color': groups[tab.groupId].color,
                   }}>
-                  {groups[tab.groupId].title || 'グループ'}
+                  {groups[tab.groupId].title || 'Tab Group'}
                 </h3>
                 <div className={styles.groupTabs}>
                   <TabItem
@@ -41,7 +39,7 @@ const TabList = ({ windowId, tabList, groups, listTitle }) => {
             tabDate={tab} />
         })}
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -1,4 +1,5 @@
 .tabItem {
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7,17 +8,17 @@
   padding: 0;
 }
 
-.activeTab {}
+.activeTab {
+  position: relative;
+}
 
 .activeTab::before {
-  position: absolute;
   display: block;
   content: "";
-  height: 8px;
-  width: 8px;
-  border-radius: 50%;
+  height: 34px;
+  width: 4px;
   background-color: #e2490c;
-  margin-left: -14px;
+  margin-left: 0;
 }
 
 .tabItem+.tabItem {
