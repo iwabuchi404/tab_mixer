@@ -5,7 +5,6 @@ import styles from './TabItem.module.css';
 const TabItem = ({ tabDate, windowId }) => {
 
   const mousedownEvent = (e, tabId, windowId) => {
-    console.log(e);
     if (e.button == 1) {
       e.preventDefault();
       closeTab(tabId);

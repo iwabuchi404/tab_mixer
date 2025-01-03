@@ -64,11 +64,10 @@ const Popup = () => {
 
     setWindowTabs(sortedWindows);
   };
-  // Vue: onMounted(() => { updateTabs() })
   useEffect(() => {
     updateTabs();
 
-    // タブの変更を監視（Vue.jsのwatch相当）
+    // タブの変更を監視
     chrome.tabs.onCreated.addListener(updateTabs);
     chrome.tabs.onRemoved.addListener(updateTabs);
     chrome.tabs.onUpdated.addListener(updateTabs);
@@ -77,7 +76,7 @@ const Popup = () => {
     chrome.tabGroups.onUpdated.addListener(updateTabs);
     chrome.tabGroups.onRemoved.addListener(updateTabs);
 
-    // クリーンアップ関数（Vue.jsのonUnmounted相当）
+    // クリーンアップ関数
     return () => {
       chrome.tabs.onCreated.removeListener(updateTabs);
       chrome.tabs.onRemoved.removeListener(updateTabs);
