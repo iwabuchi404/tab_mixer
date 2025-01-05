@@ -8,6 +8,10 @@
   padding: 0;
 }
 
+.tabItem+.tabItem {
+  margin-top: 8px;
+}
+
 .activeTab {
   position: relative;
 }
@@ -21,8 +25,8 @@
   margin-left: 0;
 }
 
-.tabItem+.tabItem {
-  margin-top: 8px;
+.highlighted {
+  box-shadow: 0 0 2px 2px #a3b5c5;
 }
 
 .tabContent {

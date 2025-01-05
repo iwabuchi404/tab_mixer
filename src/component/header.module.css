@@ -1,7 +1,18 @@
-.header {}
+.header {
+  display: block;
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  background-color: #fff;
+  border-bottom: 1px solid #c8d8e9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
 
 .header__inner {
-  padding: 16px 16px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .title {
@@ -17,5 +28,5 @@
 .icon {
   width: 32px;
   height: 32px;
-  margin-right: 8px;
+  margin-right: 6px;
 }

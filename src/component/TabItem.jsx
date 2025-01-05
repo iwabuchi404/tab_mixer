@@ -39,7 +39,7 @@ const TabItem = ({ tabDate, windowId }) => {
 
   return (
     <div key={tabDate.id}
-      className={`${styles.tabItem} ${tabDate.active ? styles.activeTab : ''}`}
+      className={`${styles.tabItem} ${tabDate.active ? styles.activeTab : ''} ${tabDate.highlighted ? styles.highlighted : ''}`}
     >
       <div className={styles.tabContent}>
         {tabDate.favIconUrl && (
