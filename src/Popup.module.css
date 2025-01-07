@@ -1,5 +1,15 @@
-.popuoMain {}
+.popuoMain {
+  min-width: 600px;
+  min-height: 60px;
+}
 
 .container {
   margin: 68px 6px 24px 6px;
+}
+
+.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }

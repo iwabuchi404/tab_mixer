@@ -41,6 +41,7 @@ const TabItem = ({ tabDate, windowId }) => {
     <div key={tabDate.id}
       className={`${styles.tabItem} ${tabDate.active ? styles.activeTab : ''} ${tabDate.highlighted ? styles.highlighted : ''}`}
     >
+      {tabDate.highlighted}
       <div className={styles.tabContent}>
         {tabDate.favIconUrl && (
           <img

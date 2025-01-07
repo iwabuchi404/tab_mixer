@@ -2,13 +2,14 @@
     "manifest_version": 3,
     "name": "Tab Mixer",
     "version": "1.1",
-    "description": "Display and manage browser tabs",
+    "description": "Efficiently manage and organize multiple windows and tab groups. Smart search and filtering help you find the tabs you need instantly.",
     "icons": {
       "128": "icons/icon128.png"
     },
     "permissions": [
       "tabGroups",
-      "windows"
+      "windows",
+      "storage"
     ],
     "action": {
       "default_popup": "popup.html"

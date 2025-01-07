@@ -15,7 +15,6 @@ const Popup = () => {
   // タブの状態を更新
   const updateTabs = async () => {
     const allTabs = await chrome.tabs.query({});
-    console.log(allTabs)
     setallTabCount(allTabs.length);
 
     // 現在アクティブなウィンドウIDを取得
@@ -59,7 +58,7 @@ const Popup = () => {
     })).sort((window) => {
       return window.windowId == activeWindowId ? -1 : 1;
     });
-
+    console.log(sortedWindows);
     setWindowTabs(sortedWindows);
     applySearch(sortedWindows, searchText, filterMode);
   };
@@ -99,15 +98,44 @@ const Popup = () => {
     setDisplayTabs(finalTabs);
   };
 
+  // 設定を読み込む
+  const loadStatus = async () => {
+    try {
+      const settings = await chrome.storage.local.get(['searchText', 'filterMode']);
+      if (settings.searchText) {
+        setSearchText(settings.searchText);
+      }
+      if (settings.filterMode) {
+        setFilterMode(settings.filterMode);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  // 設定を保存
+  const saveStatus = async (newSearchText, newFilterMode) => {
+    try {
+      await chrome.storage.local.set({
+        searchText: newSearchText,
+        filterMode: newFilterMode
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
+
   // 検索テキスト変更時の処理
   const handleSearchChange = (newSearchText) => {
     setSearchText(newSearchText);
+    saveStatus(newSearchText, filterMode);
     applySearch(windowTabs, newSearchText, filterMode);
   };
 
   // フィルターモード変更時の処理
   const handleFilterModeChange = (newFilterMode) => {
     setFilterMode(newFilterMode);
+    saveStatus(searchText, newFilterMode);
     applySearch(windowTabs, searchText, newFilterMode);
   };
 
@@ -122,6 +150,9 @@ const Popup = () => {
     chrome.tabGroups.onUpdated.addListener(updateTabs);
     chrome.tabGroups.onRemoved.addListener(updateTabs);
 
+    // ストレージから設定を読み込む
+    loadStatus();
+
     return () => {
       chrome.tabs.onCreated.removeListener(updateTabs);
       chrome.tabs.onRemoved.removeListener(updateTabs);
@@ -134,6 +165,13 @@ const Popup = () => {
     };
   }, []);
 
+  // タブの更新後に検索を再適用
+  useEffect(() => {
+    if (searchText) {
+      applySearch(windowTabs, searchText, filterMode);
+    }
+  }, [windowTabs]);
+
   return (
     <div className={styles.popuoMain}>
       <Header
@@ -143,18 +181,24 @@ const Popup = () => {
         filterMode={filterMode}
       />
       <div className={styles.container}>
-        {displayTabs.map(window => (
-          <TabList
-            key={window.windowId}
-            tabList={window.tabs}
-            groups={groups}
-            windowId={window.windowId}
-            listTitle={`Window ID:${window.windowId}`}
-            focused={window.focused}
-            currentWindow={window.currentWindow}
-            filterMode={filterMode}
-          />
-        ))}
+        {displayTabs.length > 0 ? (
+          displayTabs.map(window => (
+            <TabList
+              key={window.windowId}
+              tabList={window.tabs}
+              groups={groups}
+              windowId={window.windowId}
+              listTitle={`Window ID:${window.windowId}`}
+              focused={window.focused}
+              currentWindow={window.currentWindow}
+              filterMode={filterMode}
+            />
+          ))
+        ) : (
+          <div className={styles.empty}>
+            <p>No tabs found.</p>
+          </div>
+        )}
         <Footer windowCount={displayTabs.length} allTabCount={allTabCount} />
       </div>
     </div>
