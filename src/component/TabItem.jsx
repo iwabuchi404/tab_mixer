@@ -13,6 +13,7 @@ const TabItem = ({ tabDate, windowId }) => {
   }
   // タブをアクティブにする関数
   const activateTab = async (tabId, windowId) => {
+    console.log('activateTab', tabId, windowId);
     try {
       // まずウィンドウをアクティブにする
       await chrome.windows.update(windowId, {
@@ -41,7 +42,6 @@ const TabItem = ({ tabDate, windowId }) => {
     <div key={tabDate.id}
       className={`${styles.tabItem} ${tabDate.active ? styles.activeTab : ''} ${tabDate.highlighted ? styles.highlighted : ''}`}
     >
-      {tabDate.highlighted}
       <div className={styles.tabContent}>
         {tabDate.favIconUrl && (
           <img

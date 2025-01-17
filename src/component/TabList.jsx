@@ -2,44 +2,35 @@
 import React, { useState, useEffect } from 'react';  // Vue.jsでいう { ref, onMounted } from 'vue'
 import styles from './TabList.module.css';
 import TabItem from './TabItem';
+import TabGroup from './TabGroup';
+const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow }) => {
+  const [isOpen, setIsOpen] = useState(true);
 
-const TabList = ({ windowId, tabList, groups, listTitle, currentWindow }) => {
   return (
     <div className={styles.container}>
-      <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''}`}> {listTitle} <span className={styles.count}>Tabs: {tabList.length}</span></h2>
-      <div >
-        {tabList.map((tab, index) => {
-          if (tab.groupId !== -1) {
-            if (tab.groupId !== tabList[index - 1].groupId) {
-              return <React.Fragment key={tab.id}>
-                <h3 className={styles.groupTitle}
-                  style={{
-                    '--group-color': groups[tab.groupId].color,
-                  }}>
-                  {groups[tab.groupId].title || 'Tab Group'}
-                </h3>
-                <div className={styles.groupTabs}>
-                  <TabItem
-                    key={tab.id}
-                    windowId={windowId}
-                    tabDate={tab} />
-                </div>
-              </React.Fragment>
-            }
-            return <div className={styles.groupTabs}>
-              <TabItem
-                key={tab.id}
-                windowId={windowId}
-                tabDate={tab} />
-            </div>
+      <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''} ${isOpen ? styles.open : ''}`}> {listTitle}
+        <span className={styles.count}>Tabs: {tabList.length}</span>
+        <button className={`${styles.windowToggleIcon} ${isOpen ? styles.open : ''}`}
+          onClick={() => setIsOpen(!isOpen)}>▼</button>
+      </h2>
+      <div className={`${styles.windowTabs} ${isOpen ? styles.open : ''}`}>
+        {order.map(item => {
+          if (item.type === 'group') {
+            const group = groups[item.id];
+            return (
+              <TabGroup key={item.id} groupInfo={group}>
+                {group.tabs.map(tab => (
+                  <TabItem key={tab.id} tabDate={tab} />
+                ))}
+              </TabGroup>
+            );
+          } else {
+            const tab = tabList.find(t => t.id === item.id);
+            return tab && <TabItem key={tab.id} tabDate={tab} windowId={windowId} className={styles.tabItem} />;
           }
-          return <TabItem
-            key={tab.id}
-            windowId={windowId}
-            tabDate={tab} />
         })}
       </div>
-    </div >
+    </div>
   );
 };
 

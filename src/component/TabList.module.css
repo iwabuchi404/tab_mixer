@@ -1,6 +1,10 @@
 .header {
   font-size: 16px;
+  margin-bottom: 0;
   margin-top: 0;
+}
+
+.header.open {
   margin-bottom: 16px;
 }
 
@@ -64,7 +68,6 @@
   border: solid 1px #e9ecef;
   border-radius: 4px;
   margin-top: 8px;
-
 }
 
 .groupTitle::before {
@@ -83,4 +86,39 @@
   padding-left: 24px;
   margin-top: 8px;
   margin-bottom: 8px;
+}
+
+.windowToggleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  background-color: #fff;
+  border: solid 1px #e9ecef;
+  margin-right: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all .25s ease-in;
+}
+
+.windowToggleIcon:hover {
+  background-color: #f8f9fa;
+}
+
+.windowToggleIcon.open {
+  transform: rotate(180deg);
+}
+
+.windowTabs {
+  display: block;
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  transform: all .25s ease-in;
+}
+
+.windowTabs.open {
+  opacity: 1;
+  height: calc-size(auto, size);
 }
