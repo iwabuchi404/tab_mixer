@@ -1,8 +1,29 @@
 // TabList.jsx
 import React, { useState, useEffect } from 'react';  // Vue.jsでいう { ref, onMounted } from 'vue'
+import { useSortable } from '@dnd-kit/sortable';
 import styles from './TabItem.module.css';
 
 const TabItem = ({ tabDate, windowId }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition
+  } = useSortable({
+    id: tabDate.id.toString(),
+    data: { // Add this data payload
+      tabId: tabDate.id,
+      windowId: windowId, // windowId needs to be passed as a prop to TabItem
+      groupId: tabDate.groupId === -1 ? null : tabDate.groupId, // Pass groupId, normalize -1 to null
+      type: 'tab' // Indicates this draggable is a tab
+    }
+  });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+  };
 
   const mousedownEvent = (e, tabId, windowId) => {
     if (e.button == 1) {
@@ -39,7 +60,12 @@ const TabItem = ({ tabDate, windowId }) => {
   };
 
   return (
-    <div key={tabDate.id}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      key={tabDate.id}
       className={`${styles.tabItem} ${tabDate.active ? styles.activeTab : ''} ${tabDate.highlighted ? styles.highlighted : ''}`}
     >
       <div className={styles.tabContent}>

@@ -1,8 +1,13 @@
 // TabGroup .jsx
 import React, { useState, useEffect } from 'react';
 import styles from './TabGroup.module.css';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
 const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpenState);
+
+  // Ensure groupInfo and groupInfo.tabs are defined before mapping
+  const tabIdsForSortable = groupInfo && groupInfo.tabs ? groupInfo.tabs.map(tab => tab.id.toString()) : [];
 
   return (
     <div className={`${styles.groupContainer} ${className}`}>
@@ -20,7 +25,9 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
         </button >
       </h3>
       <div className={`${styles.groupTabs} ${isOpen ? styles.open : ''}`}>
-        {children}
+        <SortableContext items={tabIdsForSortable} strategy={verticalListSortingStrategy}>
+          {children}
+        </SortableContext>
       </div>
     </div >
   );
