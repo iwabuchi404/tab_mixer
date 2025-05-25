@@ -122,3 +122,15 @@
   opacity: 1;
   height: calc-size(auto, size);
 }
+
+/* ドラッグオーバーレイのスタイル */
+.dragOverlay {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transform: rotate(3deg);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 1000;
+}

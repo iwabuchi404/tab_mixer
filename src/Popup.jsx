@@ -14,95 +14,100 @@ const Popup = () => {
 
   // タブの状態を更新
   const updateTabs = async () => {
-    const allTabs = await chrome.tabs.query({});
-    setallTabCount(allTabs.length);
+    try {
+      const allTabs = await chrome.tabs.query({});
+      setallTabCount(allTabs.length);
 
-    // 現在アクティブなウィンドウIDを取得
-    const currentTab = await chrome.tabs.query({ active: true, currentWindow: true });
-    const activeWindowId = currentTab[0]?.windowId;
+      // 現在アクティブなウィンドウIDを取得
+      const currentTab = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeWindowId = currentTab[0]?.windowId;
 
-    // タブグループを取得
-    const groups = await chrome.tabGroups.query({});
-    const groupsMap = groups.reduce((acc, group) => {
-      acc[group.id] = {
-        ...group,
-        tabs: []  // 各グループに所属するタブを格納
-      };
-      return acc;
-    }, {});
-    setgroups(groupsMap);
-
-    // ウィンドウごとにタブをグループ化
-    const tabsByWindow = allTabs.reduce((acc, tab) => {
-      // ウィンドウ用の要素がない場合初期化
-      if (!acc[tab.windowId]) {
-        acc[tab.windowId] = {
-          windowId: tab.windowId,
-          focused: false,
-          currentWindow: tab.windowId === activeWindowId,
-          groups: {},        // グループ化されたタブ
-          tabs: [], // グループ化されていないタブ
-          order: []         // タブの表示順序を保持
+      // タブグループを取得
+      const groups = await chrome.tabGroups.query({});
+      const groupsMap = groups.reduce((acc, group) => {
+        acc[group.id] = {
+          ...group,
+          tabs: []  // 各グループに所属するタブを格納
         };
-      }
+        return acc;
+      }, {});
+      setgroups(groupsMap);
 
-      // タブをグループまたは未グループリストに追加
-      if (tab.groupId !== -1) {
-        if (!acc[tab.windowId].groups[tab.groupId]) {
-          acc[tab.windowId].groups[tab.groupId] = {
-            ...groupsMap[tab.groupId],
-            tabs: []
+      // ウィンドウごとにタブをグループ化
+      const tabsByWindow = allTabs.reduce((acc, tab) => {
+        // ウィンドウ用の要素がない場合初期化
+        if (!acc[tab.windowId]) {
+          acc[tab.windowId] = {
+            windowId: tab.windowId,
+            focused: false,
+            currentWindow: tab.windowId === activeWindowId,
+            groups: {},        // グループ化されたタブ
+            tabs: [], // グループ化されていないタブ
+            order: []         // タブの表示順序を保持
           };
         }
-        acc[tab.windowId].groups[tab.groupId].tabs.push(tab);
-      } else {
-        acc[tab.windowId].tabs.push(tab);
-      }
 
-      // 表示順序を保持
-      // グループの場合はグループID、タブの場合はタブIDを保持　直前と同じGroupの場合は追加しない
-      if (acc[tab.windowId].order.length === 0 || acc[tab.windowId].order[acc[tab.windowId].order.length - 1].id !== tab.groupId
-        || tab.groupId === -1 || acc[tab.windowId].order[acc[tab.windowId].order.length - 1].type === 'tab') {
-        acc[tab.windowId].order.push({
-          type: tab.groupId !== -1 ? 'group' : 'tab',
-          id: tab.groupId !== -1 ? tab.groupId : tab.id
+        // タブをグループまたは未グループリストに追加
+        if (tab.groupId !== -1) {
+          if (!acc[tab.windowId].groups[tab.groupId]) {
+            acc[tab.windowId].groups[tab.groupId] = {
+              ...groupsMap[tab.groupId],
+              tabs: []
+            };
+          }
+          acc[tab.windowId].groups[tab.groupId].tabs.push(tab);
+        } else {
+          acc[tab.windowId].tabs.push(tab);
+        }
+
+        // 表示順序を保持
+        // グループの場合はグループID、タブの場合はタブIDを保持　直前と同じGroupの場合は追加しない
+        if (acc[tab.windowId].order.length === 0 || acc[tab.windowId].order[acc[tab.windowId].order.length - 1].id !== tab.groupId
+          || tab.groupId === -1 || acc[tab.windowId].order[acc[tab.windowId].order.length - 1].type === 'tab') {
+          acc[tab.windowId].order.push({
+            type: tab.groupId !== -1 ? 'group' : 'tab',
+            id: tab.groupId !== -1 ? tab.groupId : tab.id
+          });
+        }
+
+        return acc;
+      }, {});
+
+      // 各グループ内のタブをインデックス順にソート
+      Object.values(tabsByWindow).forEach(window => {
+        Object.values(window.groups).forEach(group => {
+          group.tabs.sort((a, b) => a.index - b.index);
         });
-      }
-
-      return acc;
-    }, {});
-
-    // 各グループ内のタブをインデックス順にソート
-    Object.values(tabsByWindow).forEach(window => {
-      Object.values(window.groups).forEach(group => {
-        group.tabs.sort((a, b) => a.index - b.index);
+        window.tabs.sort((a, b) => a.index - b.index);
       });
-      window.tabs.sort((a, b) => a.index - b.index);
-    });
 
-    const windows = await chrome.windows.getAll();
-    windows.forEach(window => {
-      if (tabsByWindow[window.id]) {
-        tabsByWindow[window.id].focused = window.focused;
-      }
-    });
+      const windows = await chrome.windows.getAll();
+      windows.forEach(window => {
+        if (tabsByWindow[window.id]) {
+          tabsByWindow[window.id].focused = window.focused;
+        }
+      });
 
-    const sortedWindows = Object.entries(tabsByWindow).map(([windowId, data]) => ({
-      windowId: parseInt(windowId),
-      groups: data.groups,
-      tabs: data.tabs,
-      focused: data.focused,
-      currentWindow: activeWindowId === parseInt(windowId),
-      highlighted: false,
-      order: data.order
-    })).sort((window) => {
-      return window.windowId == activeWindowId ? -1 : 1;
-    });
-    setWindowTabs(sortedWindows);
-    applySearch(sortedWindows, searchText, filterMode);
+      const sortedWindows = Object.entries(tabsByWindow).map(([windowId, data]) => ({
+        windowId: parseInt(windowId),
+        groups: data.groups,
+        tabs: data.tabs,
+        focused: data.focused,
+        currentWindow: activeWindowId === parseInt(windowId),
+        highlighted: false,
+        order: data.order
+      })).sort((window) => {
+        return window.windowId == activeWindowId ? -1 : 1;
+      });
+      setWindowTabs(sortedWindows);
+      applySearch(sortedWindows, searchText, filterMode);
 
-    console.log('updateTabs', sortedWindows);
-    console.log('groups', groups);
+    } catch (error) {
+      console.error('Error updating tabs:', error);
+      // エラー時は空配列にセット
+      setWindowTabs([]);
+      setDisplayTabs([]);
+    }
   };
 
   // 検索とフィルタリングを適用
@@ -235,6 +240,7 @@ const Popup = () => {
               focused={window.focused}
               currentWindow={window.currentWindow}
               filterMode={filterMode}
+              onTabReorder={updateTabs}
             />
           ))
         ) : (

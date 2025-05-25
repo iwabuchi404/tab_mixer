@@ -7,6 +7,8 @@
   border-radius: 4px;
   padding: 0;
   margin-bottom: 8px;
+  flex: 1;
+  /* SortableTabItem内での適用 */
 }
 
 .tabItem+.tabItem {
@@ -24,6 +26,7 @@
   width: 4px;
   background-color: #e2490c;
   margin-left: 0;
+  margin-right: 2px;
 }
 
 .highlighted {
@@ -131,4 +134,34 @@
 .closeButton:focus::after,
 .closeButton:focus::before {
   background-color: #e2490c;
+}
+
+/* ドラッグ中のスタイル */
+.tabItem.dragging {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* disabled状態のスタイル */
+.tabTitle:disabled,
+.closeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabTitle:disabled:hover {
+  text-decoration: none;
+}
+
+.closeButton:disabled:hover,
+.closeButton:disabled:focus {
+  color: #6b7280;
+  border-color: #6b7280;
+}
+
+.closeButton:disabled:hover::after,
+.closeButton:disabled:hover::before,
+.closeButton:disabled:focus::after,
+.closeButton:disabled:focus::before {
+  background-color: #6b7280;
 }
