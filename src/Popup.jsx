@@ -193,6 +193,7 @@ const Popup = () => {
     chrome.tabs.onRemoved.addListener(updateTabs);
     chrome.tabs.onUpdated.addListener(updateTabs);
     chrome.tabs.onActivated.addListener(updateTabs);
+    chrome.tabs.onMoved.addListener(updateTabs);
     chrome.tabGroups.onCreated.addListener(updateTabs);
     chrome.tabGroups.onUpdated.addListener(updateTabs);
     chrome.tabGroups.onRemoved.addListener(updateTabs);
@@ -205,6 +206,7 @@ const Popup = () => {
       chrome.tabs.onRemoved.removeListener(updateTabs);
       chrome.tabs.onUpdated.removeListener(updateTabs);
       chrome.tabs.onActivated.removeListener(updateTabs);
+      chrome.tabs.onMoved.removeListener(updateTabs);
       chrome.windows.onFocusChanged.removeListener(updateTabs);
       chrome.tabGroups.onCreated.removeListener(updateTabs);
       chrome.tabGroups.onUpdated.removeListener(updateTabs);

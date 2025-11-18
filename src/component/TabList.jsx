@@ -49,14 +49,16 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
       return;
     }
 
-    const oldIndex = tabList.findIndex(tab => tab.id === active.id);
-    const newIndex = tabList.findIndex(tab => tab.id === over.id);
+    // ドラッグされたタブと移動先のタブを取得
+    const activeTab = tabList.find(tab => tab.id === active.id);
+    const overTab = tabList.find(tab => tab.id === over.id);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
+    if (activeTab && overTab) {
       try {
         // Chrome API でタブの順序を変更
-        await chrome.tabs.move(active.id, { index: newIndex });
-        
+        // overTab.index を使用して正しい位置に移動
+        await chrome.tabs.move(active.id, { index: overTab.index });
+
         // 親コンポーネントに状態更新を通知
         if (onTabReorder) {
           onTabReorder();
@@ -75,12 +77,17 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
   // グループに属していないタブのみを取得
   const ungroupedTabs = tabList ? tabList.filter(tab => tab && tab.groupId === -1) : [];
 
+  // orderから、ソート可能なタブのIDリストを構築
+  const sortableTabIds = order
+    ? order.filter(item => item.type === 'tab').map(item => item.id)
+    : [];
+
   return (
     <div className={styles.container}>
       <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''} ${isOpen ? styles.open : ''}`}>
         {listTitle}
         <span className={styles.count}>Tabs: {tabList ? tabList.length : 0}</span>
-        <button 
+        <button
           className={`${styles.windowToggleIcon} ${isOpen ? styles.open : ''}`}
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Collapse window" : "Expand window"}
@@ -88,7 +95,7 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
           ▼
         </button>
       </h2>
-      
+
       <div className={`${styles.windowTabs} ${isOpen ? styles.open : ''}`}>
         <DndContext
           sensors={sensors}
@@ -98,7 +105,7 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
           onDragCancel={handleDragCancel}
         >
           <SortableContext
-            items={ungroupedTabs.map(tab => tab.id)}
+            items={sortableTabIds}
             strategy={verticalListSortingStrategy}
           >
             {order && order.map(item => {
