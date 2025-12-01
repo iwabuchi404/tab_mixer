@@ -11,11 +11,11 @@
   /* SortableTabItem内での適用 */
 }
 
-.tabItem+.tabItem {
-  /* margin-top: 8px; */
+.tabItem.activeTab {
+  border-left: 4px solid #e2490c;
 }
 
-.activeTab {
+/* .activeTab {
   position: relative;
 }
 
@@ -27,7 +27,7 @@
   background-color: #e2490c;
   margin-left: 0;
   margin-right: 2px;
-}
+} */
 
 .highlighted {
   box-shadow: 0 0 0px 1px #a3b5c5;
@@ -38,7 +38,10 @@
   align-items: center;
   gap: 4px;
   flex: 1;
-  max-width: calc(100% - 36px);
+  min-width: 0;
+  /* 重要: flexアイテムがはみ出さないようにする */
+  max-width: calc(100% - 38px);
+  /* メニューボタンと閉じるボタンのスペースを確保 */
   padding: 0;
   box-sizing: border-box;
   transition: all .2s;
@@ -49,6 +52,17 @@
   height: 24px;
   flex-shrink: 0;
   padding: 4px 6px;
+  object-fit: contain;
+}
+
+.defaultFavicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 4px 6px;
+  background-color: #cbd5e1;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .tabTitle {
@@ -60,6 +74,8 @@
   background: none;
   text-align: left;
   flex: 1;
+  min-width: 0;
+  /* 重要: text-overflowが正しく動作するために必要 */
   max-width: 100%;
   margin-left: -40px;
   padding: 6px 6px;
@@ -81,6 +97,31 @@
   text-decoration: underline;
 }
 
+.menuButton {
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 18px;
+  color: #6b7280;
+  margin-right: 4px;
+  position: relative;
+  flex-shrink: 0;
+  /* メニューボタンが縮まないようにする */
+}
+
+.menuButton:hover {
+  background-color: #f3f4f6;
+  border-radius: 4px;
+}
+
+.tabItem:hover .menuButton,
+.menuButton.visible {
+  opacity: 1;
+}
+
 .closeButton {
   color: #6b7280;
   cursor: pointer;
@@ -97,6 +138,8 @@
   align-items: center;
   transition: all .2s;
   position: relative;
+  flex-shrink: 0;
+  /* 閉じるボタンが縮まないようにする */
 }
 
 .closeButton::after,

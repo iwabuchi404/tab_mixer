@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import TabList from './component/TabList';
 import Header from './component/header';
 import Footer from './component/footer';
+import TabItem from './component/TabItem';
 import styles from './Popup.module.css';
 
 const Popup = () => {
@@ -11,6 +24,18 @@ const Popup = () => {
   const [groups, setgroups] = useState({});
   const [searchText, setSearchText] = useState('');
   const [filterMode, setFilterMode] = useState(false);
+  const [activeDragTab, setActiveDragTab] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // タブの状態を更新
   const updateTabs = async () => {
@@ -186,6 +211,75 @@ const Popup = () => {
     applySearch(windowTabs, searchText, newFilterMode);
   };
 
+  const handleDragStart = (event) => {
+    const { active } = event;
+    // 全ウィンドウから該当するタブを探す
+    for (const window of windowTabs) {
+      const tab = window.tabs.find(t => t.id === active.id);
+      if (tab) {
+        setActiveDragTab(tab);
+        return;
+      }
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    setActiveDragTab(null);
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    // 移動元と移動先の情報を特定
+    let sourceWindowId, targetWindowId, targetIndex;
+    let sourceTab;
+
+    // sourceWindowId と sourceTab を探す
+    for (const window of windowTabs) {
+      const tab = window.tabs.find(t => t.id === active.id);
+      if (tab) {
+        sourceWindowId = window.windowId;
+        sourceTab = tab;
+        break;
+      }
+    }
+
+    // targetWindowId と targetIndex を探す
+    // over.id がタブIDの場合
+    for (const window of windowTabs) {
+      const tabIndex = window.tabs.findIndex(t => t.id === over.id);
+      if (tabIndex !== -1) {
+        targetWindowId = window.windowId;
+        targetIndex = tabIndex;
+        break;
+      }
+    }
+
+    if (sourceWindowId !== undefined && targetWindowId !== undefined) {
+      try {
+        if (sourceWindowId === targetWindowId) {
+          // 同一ウィンドウ内の並べ替え
+          await chrome.tabs.move(active.id, { index: targetIndex });
+        } else {
+          // 別ウィンドウへの移動
+          await chrome.tabs.move(active.id, { windowId: targetWindowId, index: targetIndex });
+          await chrome.windows.update(targetWindowId, { focused: true });
+          await chrome.tabs.update(active.id, { active: true });
+        }
+
+        updateTabs();
+      } catch (error) {
+        console.error('Failed to move tab:', error);
+        updateTabs(); // 失敗時も同期をとる
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragTab(null);
+  };
+
   useEffect(() => {
     updateTabs();
 
@@ -227,29 +321,49 @@ const Popup = () => {
         onFilterModeChange={handleFilterModeChange}
         filterMode={filterMode}
       />
-      <div className={styles.container}>
-        {displayTabs.length > 0 ? (
-          displayTabs.map(window => (
-            <TabList
-              key={window.windowId}
-              tabList={window.tabs}
-              order={window.order}
-              groups={window.groups}
-              windowId={window.windowId}
-              listTitle={`Window ID:${window.windowId}`}
-              focused={window.focused}
-              currentWindow={window.currentWindow}
-              filterMode={filterMode}
-              onTabReorder={updateTabs}
-            />
-          ))
-        ) : (
-          <div className={styles.empty}>
-            <p>No tabs found.</p>
-          </div>
-        )}
-        <Footer windowCount={displayTabs.length} allTabCount={allTabCount} />
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className={styles.container}>
+          {displayTabs.length > 0 ? (
+            displayTabs.map(window => (
+              <TabList
+                key={window.windowId}
+                tabList={window.tabs}
+                order={window.order}
+                groups={window.groups}
+                windowId={window.windowId}
+                listTitle={`Window ID:${window.windowId}`}
+                focused={window.focused}
+                currentWindow={window.currentWindow}
+                filterMode={filterMode}
+                existingGroups={Object.values(groups)}
+                onTabReorder={updateTabs}
+              />
+            ))
+          ) : (
+            <div className={styles.empty}>
+              <p>No tabs found.</p>
+            </div>
+          )}
+          <Footer windowCount={displayTabs.length} allTabCount={allTabCount} />
+        </div>
+        <DragOverlay>
+          {activeDragTab ? (
+            <div className={styles.dragOverlay}>
+              <TabItem
+                tabDate={activeDragTab}
+                windowId={activeDragTab.windowId}
+                isDragging={true}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 };
