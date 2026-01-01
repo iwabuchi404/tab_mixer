@@ -15,6 +15,7 @@ import TabList from './component/TabList';
 import Header from './component/header';
 import Footer from './component/footer';
 import TabItem from './component/TabItem';
+import { CHROME_COLORS } from './component/GroupDialog';
 import styles from './Popup.module.css';
 
 const Popup = () => {
@@ -25,6 +26,7 @@ const Popup = () => {
   const [searchText, setSearchText] = useState('');
   const [filterMode, setFilterMode] = useState(false);
   const [activeDragTab, setActiveDragTab] = useState(null);
+  const [activeDragGroup, setActiveDragGroup] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -213,61 +215,31 @@ const Popup = () => {
 
   const handleDragStart = (event) => {
     const { active } = event;
-    // 全ウィンドウから該当するタブを探す
-    for (const window of windowTabs) {
-      const tab = window.tabs.find(t => t.id === active.id);
-      if (tab) {
-        setActiveDragTab(tab);
-        return;
-      }
-      // グループ内のタブも検索
-      for (const groupId in window.groups) {
-        const groupTab = window.groups[groupId].tabs.find(t => t.id === active.id);
-        if (groupTab) {
-          setActiveDragTab(groupTab);
-          return;
-        }
-      }
+    const { type, tabData, groupInfo } = active.data.current || {};
+
+    if (type === 'tab') {
+      setActiveDragTab(tabData);
+    } else if (type === 'group') {
+      setActiveDragGroup(groupInfo);
     }
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     setActiveDragTab(null);
+    setActiveDragGroup(null);
 
     if (!over || active.id === over.id) {
       return;
     }
 
-    // 移動元と移動先の情報を特定
-    let sourceWindowId, targetWindowId, targetIndex;
-    let sourceGroupId = -1;
-    let targetGroupId = -1;
+    const { type: activeType } = active.data.current || {};
 
-    // sourceWindowId, sourceGroupId を探す
-    for (const window of windowTabs) {
-      // グループ外のタブを検索
-      let tab = window.tabs.find(t => t.id === active.id);
-      if (tab) {
-        sourceWindowId = window.windowId;
-        sourceGroupId = -1;
-        break;
-      }
-      // グループ内のタブを検索
-      for (const groupId in window.groups) {
-        tab = window.groups[groupId].tabs.find(t => t.id === active.id);
-        if (tab) {
-          sourceWindowId = window.windowId;
-          sourceGroupId = parseInt(groupId);
-          break;
-        }
-      }
-      if (sourceWindowId) break;
-    }
+    // 移動先の情報を特定
+    let targetWindowId, targetIndex, targetGroupId = -1;
 
-    // targetWindowId, targetGroupId, targetIndex を探す
     for (const window of windowTabs) {
-      // グループ外のタブで検索
+      // 1. オーバーしたのがタブの場合
       let tabIndex = window.tabs.findIndex(t => t.id === over.id);
       if (tabIndex !== -1) {
         targetWindowId = window.windowId;
@@ -276,7 +248,7 @@ const Popup = () => {
         break;
       }
 
-      // グループ内のタブで検索
+      // 2. オーバーしたのがグループ内のタブの場合
       for (const groupId in window.groups) {
         tabIndex = window.groups[groupId].tabs.findIndex(t => t.id === over.id);
         if (tabIndex !== -1) {
@@ -286,42 +258,69 @@ const Popup = () => {
           break;
         }
       }
+
+      // 3. オーバーしたのがグループタイトルの場合
+      if (window.groups[over.id]) {
+        targetWindowId = window.windowId;
+        // グループの最初のタブのインデックスを使用
+        const groupTabs = window.groups[over.id].tabs;
+        targetIndex = groupTabs.length > 0 ? groupTabs[0].index : 0;
+        targetGroupId = -1; // ヘッダーにドロップした場合はグループに入れない（グループの直上に移動）
+        break;
+      }
+
       if (targetWindowId) break;
     }
 
-    if (sourceWindowId !== undefined && targetWindowId !== undefined) {
-      try {
-        // 1. ウィンドウ移動が必要な場合
+    if (targetWindowId === undefined) return;
+
+    try {
+      if (activeType === 'tab') {
+        // タブの移動ロジック
+        let sourceWindowId, sourceGroupId = -1;
+        for (const window of windowTabs) {
+          if (window.tabs.find(t => t.id === active.id)) {
+            sourceWindowId = window.windowId;
+            break;
+          }
+          for (const groupId in window.groups) {
+            if (window.groups[groupId].tabs.find(t => t.id === active.id)) {
+              sourceWindowId = window.windowId;
+              sourceGroupId = parseInt(groupId);
+              break;
+            }
+          }
+          if (sourceWindowId) break;
+        }
+
         if (sourceWindowId !== targetWindowId) {
           await chrome.tabs.move(active.id, { windowId: targetWindowId, index: targetIndex });
-          await chrome.windows.update(targetWindowId, { focused: true });
-          await chrome.tabs.update(active.id, { active: true });
         } else {
-          // 同一ウィンドウ内での移動
           await chrome.tabs.move(active.id, { index: targetIndex });
         }
 
-        // 2. グループ状態の更新
         if (sourceGroupId !== targetGroupId) {
           if (targetGroupId !== -1) {
-            // グループへ追加 (またはグループ移動)
             await chrome.tabs.group({ tabIds: active.id, groupId: targetGroupId });
           } else {
-            // グループから解除
             await chrome.tabs.ungroup(active.id);
           }
         }
-
-        updateTabs();
-      } catch (error) {
-        console.error('Failed to move tab:', error);
-        updateTabs(); // 失敗時も同期をとる
+      } else if (activeType === 'group') {
+        // グループの移動ロジック
+        await chrome.tabGroups.move(active.id, { windowId: targetWindowId, index: targetIndex });
       }
+
+      updateTabs();
+    } catch (error) {
+      console.error('Failed to move item:', error);
+      updateTabs();
     }
   };
 
   const handleDragCancel = () => {
     setActiveDragTab(null);
+    setActiveDragGroup(null);
   };
 
   useEffect(() => {
@@ -404,6 +403,23 @@ const Popup = () => {
                 windowId={activeDragTab.windowId}
                 isDragging={true}
               />
+            </div>
+          ) : activeDragGroup ? (
+            <div className={styles.dragOverlay}>
+              <div className={styles.groupDragPreview}>
+                <span
+                  className={styles.groupFolderIcon}
+                  style={{ color: CHROME_COLORS.find(c => c.value === activeDragGroup.color)?.hex || '#1a73e8' }}
+                >
+                  📁
+                </span>
+                <span className={styles.groupTitlePreview}>
+                  {activeDragGroup.title || 'Tab Group'}
+                </span>
+                <span className={styles.groupCountPreview}>
+                  ({activeDragGroup.tabs.length} tabs)
+                </span>
+              </div>
             </div>
           ) : null}
         </DragOverlay>

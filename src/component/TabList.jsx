@@ -8,12 +8,13 @@ import styles from './TabList.module.css';
 import TabItem from './TabItem';
 import SortableTabItem from './SortableTabItem';
 import TabGroup from './TabGroup';
+import SortableTabGroup from './SortableTabGroup';
 
 const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, existingGroups = [] }) => {
   const [isOpen, setIsOpen] = useState(true);
 
-  // グループに属していないタブのみを取得
-  const ungroupedTabs = tabList ? tabList.filter(tab => tab && tab.groupId === -1) : [];
+  // ソート可能なアイテムのIDリストを作成
+  const sortableItems = order ? order.map(item => item.id) : [];
 
   return (
     <div className={styles.container}>
@@ -31,14 +32,19 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
 
       <div className={`${styles.windowTabs} ${isOpen ? styles.open : ''}`}>
         <SortableContext
-          items={ungroupedTabs.map(tab => tab.id)}
+          items={sortableItems}
           strategy={verticalListSortingStrategy}
         >
           {order && order.map(item => {
             if (item.type === 'group' && groups[item.id]) {
               const group = groups[item.id];
               return (
-                <TabGroup key={item.id} groupInfo={group} onGroupUpdate={onTabReorder}>
+                <SortableTabGroup
+                  key={item.id}
+                  groupInfo={group}
+                  onGroupUpdate={onTabReorder}
+                  windowId={windowId}
+                >
                   <SortableContext
                     items={group.tabs.map(tab => tab.id)}
                     strategy={verticalListSortingStrategy}
@@ -53,7 +59,7 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
                       />
                     ))}
                   </SortableContext>
-                </TabGroup>
+                </SortableTabGroup>
               );
             } else if (item.type === 'tab') {
               const tab = tabList.find(t => t.id === item.id);

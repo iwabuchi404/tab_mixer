@@ -13,3 +13,30 @@
   align-items: center;
   height: 100%;
 }
+
+.groupDragPreview {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  gap: 8px;
+  min-width: 200px;
+}
+
+.groupFolderIcon {
+  font-size: 18px;
+}
+
+.groupTitlePreview {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.groupCountPreview {
+  color: #64748b;
+  font-size: 12px;
+}
