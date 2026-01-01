@@ -39,15 +39,20 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
               const group = groups[item.id];
               return (
                 <TabGroup key={item.id} groupInfo={group} onGroupUpdate={onTabReorder}>
-                  {group.tabs && group.tabs.map(tab => (
-                    <TabItem
-                      key={tab.id}
-                      tabDate={tab}
-                      windowId={windowId}
-                      existingGroups={existingGroups}
-                      onTabReorder={onTabReorder}
-                    />
-                  ))}
+                  <SortableContext
+                    items={group.tabs.map(tab => tab.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {group.tabs && group.tabs.map(tab => (
+                      <SortableTabItem
+                        key={tab.id}
+                        tabData={tab}
+                        windowId={windowId}
+                        existingGroups={existingGroups}
+                        onTabReorder={onTabReorder}
+                      />
+                    ))}
+                  </SortableContext>
                 </TabGroup>
               );
             } else if (item.type === 'tab') {

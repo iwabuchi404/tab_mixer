@@ -220,6 +220,14 @@ const Popup = () => {
         setActiveDragTab(tab);
         return;
       }
+      // グループ内のタブも検索
+      for (const groupId in window.groups) {
+        const groupTab = window.groups[groupId].tabs.find(t => t.id === active.id);
+        if (groupTab) {
+          setActiveDragTab(groupTab);
+          return;
+        }
+      }
     }
   };
 
@@ -233,39 +241,75 @@ const Popup = () => {
 
     // 移動元と移動先の情報を特定
     let sourceWindowId, targetWindowId, targetIndex;
-    let sourceTab;
+    let sourceGroupId = -1;
+    let targetGroupId = -1;
 
-    // sourceWindowId と sourceTab を探す
+    // sourceWindowId, sourceGroupId を探す
     for (const window of windowTabs) {
-      const tab = window.tabs.find(t => t.id === active.id);
+      // グループ外のタブを検索
+      let tab = window.tabs.find(t => t.id === active.id);
       if (tab) {
         sourceWindowId = window.windowId;
-        sourceTab = tab;
+        sourceGroupId = -1;
         break;
       }
+      // グループ内のタブを検索
+      for (const groupId in window.groups) {
+        tab = window.groups[groupId].tabs.find(t => t.id === active.id);
+        if (tab) {
+          sourceWindowId = window.windowId;
+          sourceGroupId = parseInt(groupId);
+          break;
+        }
+      }
+      if (sourceWindowId) break;
     }
 
-    // targetWindowId と targetIndex を探す
-    // over.id がタブIDの場合
+    // targetWindowId, targetGroupId, targetIndex を探す
     for (const window of windowTabs) {
-      const tabIndex = window.tabs.findIndex(t => t.id === over.id);
+      // グループ外のタブで検索
+      let tabIndex = window.tabs.findIndex(t => t.id === over.id);
       if (tabIndex !== -1) {
         targetWindowId = window.windowId;
-        targetIndex = tabIndex;
+        targetIndex = window.tabs[tabIndex].index;
+        targetGroupId = -1;
         break;
       }
+
+      // グループ内のタブで検索
+      for (const groupId in window.groups) {
+        tabIndex = window.groups[groupId].tabs.findIndex(t => t.id === over.id);
+        if (tabIndex !== -1) {
+          targetWindowId = window.windowId;
+          targetIndex = window.groups[groupId].tabs[tabIndex].index;
+          targetGroupId = parseInt(groupId);
+          break;
+        }
+      }
+      if (targetWindowId) break;
     }
 
     if (sourceWindowId !== undefined && targetWindowId !== undefined) {
       try {
-        if (sourceWindowId === targetWindowId) {
-          // 同一ウィンドウ内の並べ替え
-          await chrome.tabs.move(active.id, { index: targetIndex });
-        } else {
-          // 別ウィンドウへの移動
+        // 1. ウィンドウ移動が必要な場合
+        if (sourceWindowId !== targetWindowId) {
           await chrome.tabs.move(active.id, { windowId: targetWindowId, index: targetIndex });
           await chrome.windows.update(targetWindowId, { focused: true });
           await chrome.tabs.update(active.id, { active: true });
+        } else {
+          // 同一ウィンドウ内での移動
+          await chrome.tabs.move(active.id, { index: targetIndex });
+        }
+
+        // 2. グループ状態の更新
+        if (sourceGroupId !== targetGroupId) {
+          if (targetGroupId !== -1) {
+            // グループへ追加 (またはグループ移動)
+            await chrome.tabs.group({ tabIds: active.id, groupId: targetGroupId });
+          } else {
+            // グループから解除
+            await chrome.tabs.ungroup(active.id);
+          }
         }
 
         updateTabs();
