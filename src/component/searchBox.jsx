@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './searchBox.module.css';
 
-const searchBox = ({ searchText, onChange, onSearch, filterMode, onFilterModeChange }) => {
+const searchBox = ({ searchText, onChange, onSearch, filterMode, onFilterModeChange, isSidePanelMode }) => {
     const textChange = (e) => {
         onChange(e.target.value);
     };
@@ -13,7 +13,7 @@ const searchBox = ({ searchText, onChange, onSearch, filterMode, onFilterModeCha
         onSearch();
     }
     return (
-        <div className={styles.box}>
+        <div className={`${styles.box} ${isSidePanelMode ? styles.sidePanelMode : ''}`}>
             <input type="text" className={styles.input} placeholder="Title or URL Search..." value={searchText} onChange={textChange} />
             <button className={styles.clearButton} onClick={clearText}></button>
             <button className={styles.searchButton} onClick={search}></button>

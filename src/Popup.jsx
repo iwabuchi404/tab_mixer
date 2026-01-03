@@ -27,6 +27,7 @@ const Popup = () => {
   const [filterMode, setFilterMode] = useState(false);
   const [activeDragTab, setActiveDragTab] = useState(null);
   const [activeDragGroup, setActiveDragGroup] = useState(null);
+  const [isSidePanelMode, setIsSidePanelMode] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -175,12 +176,32 @@ const Popup = () => {
   // 設定を読み込む
   const loadStatus = async () => {
     try {
-      const settings = await chrome.storage.local.get(['searchText', 'filterMode']);
+      const settings = await chrome.storage.local.get(['searchText', 'filterMode', 'isSidePanelMode']);
       if (settings.searchText) {
         setSearchText(settings.searchText);
       }
       if (settings.filterMode) {
         setFilterMode(settings.filterMode);
+      }
+      if (settings.isSidePanelMode !== undefined) {
+        setIsSidePanelMode(settings.isSidePanelMode);
+
+        // 緊急回避: サイドパネルモード設定中にポップアップとして開かれた場合、即座に閉じる
+        // これにより、遷移時や誤操作による二重開きを防ぐ
+        try {
+          const currentWin = await chrome.windows.getCurrent();
+          if (settings.isSidePanelMode && currentWin.type === 'popup') {
+            window.close();
+            return;
+          }
+        } catch (e) {
+          console.warn('Error checking window type:', e);
+        }
+
+        // 起動時にもポップアップの状態を同期
+        if (chrome.action && chrome.action.setPopup) {
+          await chrome.action.setPopup({ popup: settings.isSidePanelMode ? "" : "popup.html" });
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -192,7 +213,8 @@ const Popup = () => {
     try {
       await chrome.storage.local.set({
         searchText: newSearchText,
-        filterMode: newFilterMode
+        filterMode: newFilterMode,
+        isSidePanelMode: isSidePanelMode
       });
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -211,6 +233,56 @@ const Popup = () => {
     setFilterMode(newFilterMode);
     saveStatus(searchText, newFilterMode);
     applySearch(windowTabs, searchText, newFilterMode);
+  };
+
+  // サイドパネルモード変更時の処理
+  const handleSidePanelModeChange = async (newMode) => {
+    setIsSidePanelMode(newMode);
+    try {
+      await chrome.storage.local.set({ isSidePanelMode: newMode });
+
+      // 1. まず動作設定を更新
+      if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+        await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: newMode });
+      }
+
+      // 2. ポップアップの有無を更新（二重開き防止のため空に設定）
+      if (chrome.action && chrome.action.setPopup) {
+        await chrome.action.setPopup({ popup: newMode ? "" : "popup.html" });
+      }
+
+      if (newMode) {
+        // ポップアップ -> サイドパネルへ
+        // メインのブラウザウィンドウを取得
+        const browserWindow = await chrome.windows.getLastFocused({ windowTypes: ['normal'] });
+
+        // サイドパネルを開く
+        if (chrome.sidePanel && chrome.sidePanel.open) {
+          try {
+            await chrome.sidePanel.open({ windowId: browserWindow.id });
+          } catch (e) {
+            console.error('Failed to open side panel:', e);
+          }
+        }
+
+        // 自身（ポップアップ）を閉じる
+        setTimeout(() => window.close(), 100);
+      } else {
+        // サイドパネル -> ポップアップへ
+        // ポップアップを開き直す
+        if (chrome.action && chrome.action.openPopup) {
+          try {
+            await chrome.action.openPopup();
+          } catch (e) {
+            console.error('Failed to open popup:', e);
+          }
+        }
+        // サイドパネル自身を閉じる
+        window.close();
+      }
+    } catch (error) {
+      console.error('Error setting side panel behavior:', error);
+    }
   };
 
   const handleDragStart = (event) => {
@@ -357,12 +429,14 @@ const Popup = () => {
   }, [windowTabs]);
 
   return (
-    <div className={styles.popuoMain}>
+    <div className={`${styles.popupMain} ${isSidePanelMode ? styles.sidePanelMode : ''}`}>
       <Header
         searchText={searchText}
         setSearchText={handleSearchChange}
         onFilterModeChange={handleFilterModeChange}
         filterMode={filterMode}
+        isSidePanelMode={isSidePanelMode}
+        onSidePanelModeChange={handleSidePanelModeChange}
       />
       <DndContext
         sensors={sensors}

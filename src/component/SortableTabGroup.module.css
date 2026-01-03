@@ -1,0 +1,76 @@
+.sortableContainer {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 8px;
+    background-color: transparent;
+    border-radius: 4px;
+}
+
+.sortableContainer.dragging {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    background-color: #ffffff;
+    z-index: 1000;
+}
+
+.dragHandle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 24px;
+    cursor: grab;
+    color: #9ca3af;
+    padding: 4px;
+    flex-shrink: 0;
+    background-color: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    transition: all 0.2s ease;
+    margin-top: 0;
+}
+
+.dragHandle:hover {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.dragHandle:active {
+    cursor: grabbing;
+    background-color: #e5e7eb;
+}
+
+.dragIcon {
+    pointer-events: none;
+}
+
+.groupContent {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* TabGroup側のボーダーと干渉しないように調整が必要な場合がある */
+.groupContent>div {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-left: none !important;
+}
+
+/* ドラッグ中は他の操作を無効化 */
+.sortableContainer.dragging * {
+    pointer-events: none;
+}
+
+.sortableContainer:hover .dragHandle {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+@media (pointer: coarse) {
+    .dragHandle {
+        width: 24px;
+        padding: 6px;
+    }
+}

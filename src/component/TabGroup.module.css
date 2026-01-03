@@ -1,6 +1,7 @@
-.container {
+.groupContainer {
   padding: 16px;
-  width: 600px;
+  width: 100%;
+  box-sizing: border-box;
   background-color: #fff;
   border: #e9ecef solid 1px;
   border-radius: 6px;

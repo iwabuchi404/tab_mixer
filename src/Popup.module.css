@@ -1,6 +1,16 @@
-.popuoMain {
-  min-width: 600px;
+.popupMain {
+  width: 640px;
   min-height: 60px;
+  margin: 0 auto;
+}
+
+.popupMain.sidePanelMode {
+  width: 100%;
+}
+
+.popupMain.sidePanelMode .container {
+  margin-top: 110px !important;
+  /* 縦並びのヘッダー高さに合わせる */
 }
 
 .container {

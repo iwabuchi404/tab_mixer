@@ -4,6 +4,10 @@
   width: 400px;
 }
 
+.box.sidePanelMode {
+  width: 100%;
+}
+
 .box:hover .clearButton {
   opacity: 1;
 }
@@ -23,6 +27,11 @@
   padding: 6px 6px;
   border: solid 1px #e9ecef;
   border-radius: 4px 0 0 4px;
+}
+
+.sidePanelMode .input {
+  width: auto;
+  flex: 1;
 }
 
 .clearButton,
