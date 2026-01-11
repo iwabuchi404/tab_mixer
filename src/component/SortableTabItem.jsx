@@ -38,7 +38,7 @@ const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder }) =>
     <div
       ref={setNodeRef}
       style={style}
-      className={`${styles.sortableContainer} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.sortableContainer} ${isDragging ? styles.dragging : ''} ${tabData.active ? styles.activeTab : ''}`}
     >
       <div className={styles.dragHandle} {...attributes} {...listeners}>
         <svg
@@ -59,7 +59,7 @@ const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder }) =>
       </div>
 
       <TabItem
-        tabDate={tabData}
+        tabData={tabData}
         windowId={windowId}
         isDragging={isDragging}
         existingGroups={existingGroups}

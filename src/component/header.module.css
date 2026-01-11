@@ -39,6 +39,11 @@
   align-items: center;
 }
 
+.header.sidePanelMode .title {
+  width: 100%;
+  justify-content: space-between;
+}
+
 .icon {
   width: 32px;
   height: 32px;
@@ -46,29 +51,7 @@
 }
 
 .sidePanelToggle {
-  background: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  cursor: pointer;
   width: 32px;
   height: 32px;
   margin-left: 12px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8fafc;
-  color: #5f6368;
-  flex-shrink: 0;
-}
-
-.sidePanelToggle:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-.sidePanelToggle.active {
-  background-color: #e2e8f0;
-  border-color: #94a3b8;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }

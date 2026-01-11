@@ -4,30 +4,22 @@
   align-items: center;
   justify-content: space-between;
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border-left: none;
+  /* SortableTabItemのボーダーとつなげる */
+  border-radius: 0 4px 4px 0;
   padding: 0;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   flex: 1;
-  /* SortableTabItem内での適用 */
+  box-sizing: border-box;
+  background-color: transparent;
+  min-height: 34px;
 }
 
 .tabItem.activeTab {
-  border-left: 4px solid #e2490c;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
 }
-
-/* .activeTab {
-  position: relative;
-}
-
-.activeTab::before {
-  display: block;
-  content: "";
-  height: 34px;
-  width: 4px;
-  background-color: #e2490c;
-  margin-left: 0;
-  margin-right: 2px;
-} */
 
 .highlighted {
   box-shadow: 0 0 0px 1px #a3b5c5;
@@ -39,12 +31,11 @@
   gap: 4px;
   flex: 1;
   min-width: 0;
-  /* 重要: flexアイテムがはみ出さないようにする */
   max-width: calc(100% - 38px);
-  /* メニューボタンと閉じるボタンのスペースを確保 */
   padding: 0;
   box-sizing: border-box;
   transition: all .2s;
+  background-color: transparent;
 }
 
 .favicon {
@@ -75,22 +66,11 @@
   text-align: left;
   flex: 1;
   min-width: 0;
-  /* 重要: text-overflowが正しく動作するために必要 */
   max-width: 100%;
-  margin-left: -40px;
   padding: 6px 6px;
-  padding-left: 40px;
   font-size: 14px;
   transition: all .2s;
-}
-
-.tabTitle:hover,
-.tabContent:hover {
-  text-decoration: none;
-}
-
-.tabContent:hover {
-  background-color: #ccd7ee;
+  color: inherit;
 }
 
 .tabTitle:hover {
@@ -109,7 +89,6 @@
   margin-right: 4px;
   position: relative;
   flex-shrink: 0;
-  /* メニューボタンが縮まないようにする */
 }
 
 .menuButton:hover {
@@ -122,61 +101,16 @@
   opacity: 1;
 }
 
-.closeButton {
-  color: #6b7280;
-  cursor: pointer;
-  padding: 4px;
-  margin: auto 6px;
-  border: none;
-  background: none;
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-  border: #6b7280 solid 2px;
-  border-radius: 50%;
+.tabActions {
   display: flex;
   align-items: center;
-  transition: all .2s;
-  position: relative;
-  flex-shrink: 0;
-  /* 閉じるボタンが縮まないようにする */
+  gap: 2px;
+  margin-right: 4px;
 }
 
-.closeButton::after,
-.closeButton::before {
-  content: "";
-  display: block;
-  width: calc(100% - 4px);
-  height: 3px;
-  position: absolute;
-  margin: auto;
-  top: 50%;
-  left: 0;
-  right: 0;
-  background-color: #6b7280;
-  border-radius: 3px;
-  transition: all .2s;
-}
-
-.closeButton::after {
-  transform: translateY(-50%) rotate(45deg);
-}
-
-.closeButton::before {
-  transform: translateY(-50%) rotate(-45deg);
-}
-
-.closeButton:hover,
-.closeButton:focus {
-  color: #e2490c;
-  border-color: #e2490c;
-}
-
-.closeButton:hover::after,
-.closeButton:hover::before,
-.closeButton:focus::after,
-.closeButton:focus::before {
-  background-color: #e2490c;
+.closeButton {
+  /* CloseIcon component handles base styles, but we can override or add specific layout if needed */
+  margin: 0;
 }
 
 /* ドラッグ中のスタイル */

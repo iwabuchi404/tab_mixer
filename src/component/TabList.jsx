@@ -9,9 +9,22 @@ import TabItem from './TabItem';
 import SortableTabItem from './SortableTabItem';
 import TabGroup from './TabGroup';
 import SortableTabGroup from './SortableTabGroup';
+import ExpandIcon from './ExpandIcon';
+import CloseIcon from './CloseIcon';
+import WindowCloseDialog from './WindowCloseDialog';
 
 const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, existingGroups = [] }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  const handleCloseWindow = async () => {
+    try {
+      await chrome.windows.remove(windowId);
+      setConfirmDialogOpen(false);
+    } catch (error) {
+      console.error('Error removing window:', error);
+    }
+  };
 
   // ソート可能なアイテムのIDリストを作成
   const sortableItems = order ? order.map(item => item.id) : [];
@@ -19,16 +32,31 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
   return (
     <div className={styles.container}>
       <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''} ${isOpen ? styles.open : ''}`}>
-        {listTitle}
-        <span className={styles.count}>Tabs: {tabList ? tabList.length : 0}</span>
-        <button
-          className={`${styles.windowToggleIcon} ${isOpen ? styles.open : ''}`}
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Collapse window" : "Expand window"}
-        >
-          ▼
-        </button>
+        <div className={styles.headerLeft}>
+          {listTitle}
+          <ExpandIcon
+            isOpen={isOpen}
+            onClick={() => setIsOpen(!isOpen)}
+            ariaLabel={isOpen ? "Collapse window" : "Expand window"}
+            className={styles.windowToggleIcon}
+          />
+        </div>
+        <div className={styles.headerRight}>
+          <span className={styles.count}>Tabs: {(tabList ? tabList.length : 0) + Object.values(groups || {}).reduce((acc, g) => acc + (g.tabs ? g.tabs.length : 0), 0)}</span>
+          <CloseIcon
+            onClick={() => setConfirmDialogOpen(true)}
+            className={styles.windowCloseButton}
+            ariaLabel="Close window"
+          />
+        </div>
       </h2>
+
+      {confirmDialogOpen && (
+        <WindowCloseDialog
+          onConfirm={handleCloseWindow}
+          onCancel={() => setConfirmDialogOpen(false)}
+        />
+      )}
 
       <div className={`${styles.windowTabs} ${isOpen ? styles.open : ''}`}>
         <SortableContext

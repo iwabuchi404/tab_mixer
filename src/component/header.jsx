@@ -2,7 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import styles from './header.module.css';
 import SearchBox from './searchBox';
+import IconButton from './IconButton';
+
 const SidePanelIcon = ({ active }) => (
+  // ... (same as before)
   <svg
     width="16"
     height="16"
@@ -29,13 +32,14 @@ const Header = ({ searchText, setSearchText, onSearch, filterMode, onFilterModeC
             <img src='/icons/icon.svg' className={styles.icon} />
             Tab Mixer
           </div>
-          <button
-            className={`${styles.sidePanelToggle} ${isSidePanelMode ? styles.active : ''}`}
+          <IconButton
+            className={styles.sidePanelToggle}
+            active={isSidePanelMode}
             onClick={() => onSidePanelModeChange(!isSidePanelMode)}
             title={isSidePanelMode ? "Side Panel Mode: ON" : "Side Panel Mode: OFF"}
           >
             <SidePanelIcon active={isSidePanelMode} />
-          </button>
+          </IconButton>
         </h1>
         <SearchBox
           searchText={searchText}

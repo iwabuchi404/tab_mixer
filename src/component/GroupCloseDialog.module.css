@@ -1,0 +1,130 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.dialog {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.description {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.choiceList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.choiceButton {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.choiceButton:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.choiceIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.choiceContent {
+    flex: 1;
+}
+
+.choiceTitle {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+}
+
+.choiceText {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.choiceButton.danger {
+    background: #fff5f5;
+    border-color: #fed7d7;
+}
+
+.choiceButton.danger:hover {
+    background: #fff0f0;
+    border-color: #feb2b2;
+}
+
+.choiceButton.danger .choiceTitle {
+    color: #c53030;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cancelButton {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.cancelButton:hover {
+    background: #f3f4f6;
+    color: #374151;
+}

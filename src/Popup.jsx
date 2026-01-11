@@ -147,27 +147,47 @@ const Popup = () => {
 
     const searchLower = search.toLowerCase();
     const processedTabs = tabs.map(window => {
-      if (isFilterMode) {
-        // フィルターモード: マッチするタブのみを表示
-        const filteredTabs = window.tabs.filter(tab => {
-          return tab.title.toLowerCase().includes(searchLower) ||
-            tab.url.toLowerCase().includes(searchLower);
-        });
-        return { ...window, tabs: filteredTabs };
-      } else {
-        // ハイライトモード: 全タブを表示し、マッチするタブをハイライト
-        const highlightedTabs = window.tabs.map(tab => {
+      // 1. グループ内のタブをフィルター/ハイライト
+      const processedGroups = {};
+      Object.entries(window.groups).forEach(([groupId, group]) => {
+        const processedGroupTabs = group.tabs.map(tab => {
           const isMatch = tab.title.toLowerCase().includes(searchLower) ||
-            tab.url.toLowerCase().includes(searchLower);
-          return { ...tab, highlighted: isMatch };
-        });
-        return { ...window, tabs: highlightedTabs };
-      }
+            (tab.url && tab.url.toLowerCase().includes(searchLower));
+          return isFilterMode ? (isMatch ? tab : null) : { ...tab, highlighted: isMatch };
+        }).filter(t => t !== null);
+
+        if (!isFilterMode || processedGroupTabs.length > 0) {
+          processedGroups[groupId] = { ...group, tabs: processedGroupTabs };
+        }
+      });
+
+      // 2. 独立したタブをフィルター/ハイライト
+      const processedUngroupedTabs = window.tabs.map(tab => {
+        const isMatch = tab.title.toLowerCase().includes(searchLower) ||
+          (tab.url && tab.url.toLowerCase().includes(searchLower));
+        return isFilterMode ? (isMatch ? tab : null) : { ...tab, highlighted: isMatch };
+      }).filter(t => t !== null);
+
+      // 3. 表示順序をフィルター（フィルターモード時のみ）
+      const processedOrder = isFilterMode
+        ? window.order.filter(item => {
+          if (item.type === 'tab') return processedUngroupedTabs.some(t => t.id === item.id);
+          if (item.type === 'group') return processedGroups[item.id] !== undefined;
+          return false;
+        })
+        : window.order;
+
+      return {
+        ...window,
+        tabs: processedUngroupedTabs,
+        groups: processedGroups,
+        order: processedOrder
+      };
     });
 
-    // フィルターモードの場合、タブが空のウィンドウを除外
+    // フィルターモードの場合、表示すべきものが何もないウィンドウを除外
     const finalTabs = isFilterMode
-      ? processedTabs.filter(window => window.tabs.length > 0)
+      ? processedTabs.filter(window => window.tabs.length > 0 || Object.keys(window.groups).length > 0)
       : processedTabs;
 
     setDisplayTabs(finalTabs);

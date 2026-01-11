@@ -1,18 +1,23 @@
 .sortableContainer {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background-color 0.2s ease;
     margin-bottom: 8px;
     background-color: transparent;
     border-radius: 4px;
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 100%;
+    border-left: 4px solid transparent;
+    /* TabItemと位置を揃える */
 }
 
-.sortableContainer.dragging {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    background-color: #ffffff;
-    z-index: 1000;
+.sortableContainer:last-child {
+    margin-bottom: 0px;
 }
+
+.sortableContainer:hover {}
 
 .dragHandle {
     display: flex;

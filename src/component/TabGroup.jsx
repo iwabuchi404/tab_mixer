@@ -3,6 +3,9 @@ import React, { useState, useRef } from 'react';
 import styles from './TabGroup.module.css';
 import DropdownMenu from './DropdownMenu';
 import GroupDialog from './GroupDialog';
+import GroupCloseDialog from './GroupCloseDialog';
+import ExpandIcon from './ExpandIcon';
+import CloseIcon from './CloseIcon';
 import { CHROME_COLORS } from './GroupDialog';
 
 const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true, onGroupUpdate }) => {
@@ -10,6 +13,7 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
     const [isHovered, setIsHovered] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const menuButtonRef = useRef(null);
 
     // グループ名を編集
@@ -42,10 +46,26 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
         try {
             const tabs = await chrome.tabs.query({ groupId: groupInfo.id });
             const tabIds = tabs.map(t => t.id);
-            await chrome.tabs.ungroup(tabIds);
+            if (tabIds.length > 0) {
+                await chrome.tabs.ungroup(tabIds);
+            }
             if (onGroupUpdate) onGroupUpdate();
         } catch (error) {
             console.error('Failed to ungroup all:', error);
+        }
+    };
+
+    // タブをすべて閉じる
+    const handleCloseAllTabs = async () => {
+        try {
+            const tabs = await chrome.tabs.query({ groupId: groupInfo.id });
+            const tabIds = tabs.map(t => t.id);
+            if (tabIds.length > 0) {
+                await chrome.tabs.remove(tabIds);
+            }
+            if (onGroupUpdate) onGroupUpdate();
+        } catch (error) {
+            console.error('Failed to close all tabs:', error);
         }
     };
 
@@ -58,16 +78,17 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
         {
             label: '色を変更',
             icon: '🎨',
-            submenu: CHROME_COLORS.map(color => ({
-                label: color.name,
-                icon: color.icon,
-                onClick: () => handleChangeColor(color.value)
-            }))
+            onClick: () => setDialogOpen(true)
         },
         {
             label: 'グループ解除',
             icon: '🔓',
             onClick: handleUngroupAll
+        },
+        {
+            label: 'グループを閉じる',
+            icon: '🗑️',
+            onClick: () => setConfirmDialogOpen(true)
         }
     ];
 
@@ -83,14 +104,16 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                <button
-                    className={styles.groupTitleInner}
-                    onClick={() => setIsOpen(!isOpen)}>
-                    {groupInfo.title || 'Tab Group'}
-                    <span className={`${styles.toggleIcon} ${isOpen ? styles.open : ''}`}>
-                        ▼
+                <div className={styles.groupHeaderLeft} onClick={() => setIsOpen(!isOpen)}>
+                    <span className={styles.groupTitleText}>
+                        {groupInfo.title || 'Tab Group'}
                     </span>
-                </button >
+                    <ExpandIcon
+                        isOpen={isOpen}
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={styles.toggleIcon}
+                    />
+                </div>
 
                 <div className={styles.menuContainer}>
                     {(isHovered || menuOpen) && (
@@ -114,6 +137,14 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
                         />
                     )}
                 </div>
+                <CloseIcon
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDialogOpen(true);
+                    }}
+                    className={styles.groupCloseButton}
+                    ariaLabel="Close group"
+                />
             </h3>
 
             {dialogOpen && (
@@ -126,6 +157,21 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
                         handleEditName(data);
                     }}
                     onCancel={() => setDialogOpen(false)}
+                />
+            )}
+
+            {confirmDialogOpen && (
+                <GroupCloseDialog
+                    groupTitle={groupInfo.title}
+                    onUngroup={() => {
+                        setConfirmDialogOpen(false);
+                        handleUngroupAll();
+                    }}
+                    onCloseTabs={() => {
+                        setConfirmDialogOpen(false);
+                        handleCloseAllTabs();
+                    }}
+                    onCancel={() => setConfirmDialogOpen(false)}
                 />
             )}
 

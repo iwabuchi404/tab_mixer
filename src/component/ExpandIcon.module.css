@@ -1,0 +1,42 @@
+.expandButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.expandButton:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #374151;
+}
+
+.expandButton:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.svgIcon {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: rotate(0deg);
+}
+
+.open .svgIcon {
+    transform: rotate(180deg);
+}
+
+/* TabList ヘッダーなどのダークトーン用調整が必要な場合に備えて */
+:global(.currentWindow) .expandButton {
+    color: #fff;
+}
+
+:global(.currentWindow) .expandButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}

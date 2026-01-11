@@ -1,72 +1,68 @@
 .sortableContainer {
   display: flex;
   align-items: stretch;
-  /* TabItemの高さに合わせる */
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease;
   margin-bottom: 8px;
-  /* TabItemと同じ間隔 */
+  background-color: transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  border-left: 4px solid transparent;
+  /* 初期状態でスペースを確保し、ガタつきを防ぐ */
 }
 
-.sortableContainer.dragging {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  background-color: #ffffff;
+.sortableContainer:last-child {
+  margin-bottom: 0px;
+}
+
+.sortableContainer:hover {
+  background-color: #ccd7ee;
+}
+
+.sortableContainer.activeTab {
+  border-left-color: #e2490c;
 }
 
 .dragHandle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
+  width: 24px;
   cursor: grab;
   color: #9ca3af;
   padding: 4px;
   margin-right: 0;
-  border-radius: 2px;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  background-color: #f9fafb;
+  background-color: rgba(249, 250, 251, 0.4);
   border: 1px solid #e2e8f0;
   border-right: none;
-  border-radius: 4px 0 0 4px;
+  order: 1;
+}
+
+.sortableContainer.activeTab .dragHandle {
+  border-left: none;
 }
 
 .dragHandle:hover {
-  background-color: #f3f4f6;
+  background-color: rgba(243, 244, 246, 0.7);
   color: #6b7280;
-}
-
-.dragHandle:active {
-  cursor: grabbing;
-  background-color: #e5e7eb;
 }
 
 .dragIcon {
   pointer-events: none;
 }
 
-/* ドラッグ中は他の操作を無効化 */
-.sortableContainer.dragging {
-  pointer-events: none;
-}
-
-/* ホバー時のドラッグハンドル表示 */
-.sortableContainer:hover .dragHandle {
-  color: #6b7280;
-  background-color: #f3f4f6;
-}
-
-/* フォーカス時のアクセシビリティ */
-.dragHandle:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
 /* TabItemのスタイル調整 */
-.sortableContainer>div {
+/* 子要素の1つ目(dragHandle)以外を拡張させる */
+.sortableContainer>div:not(.dragHandle) {
   margin-bottom: 0;
   border-radius: 0 4px 4px 0;
+  flex: 1;
+  min-width: 0;
+  order: 2;
 }
 
 /* タッチデバイス用の大きめのタッチターゲット */
