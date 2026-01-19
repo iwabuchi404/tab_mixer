@@ -29,17 +29,19 @@ const Header = ({ searchText, setSearchText, onSearch, filterMode, onFilterModeC
       <div className={styles.header__inner}>
         <h1 className={styles.title}>
           <div className={styles.titleMain}>
-            <img src='/icons/60icon.png' className={styles.icon} />
+            <img src='/icons/icon60.png' className={styles.icon} />
             Tab Mixer
           </div>
-          <IconButton
-            className={styles.sidePanelToggle}
-            active={isSidePanelMode}
-            onClick={() => onSidePanelModeChange(!isSidePanelMode)}
-            title={isSidePanelMode ? "Side Panel Mode: ON" : "Side Panel Mode: OFF"}
-          >
-            <SidePanelIcon active={isSidePanelMode} />
-          </IconButton>
+          <div className={styles.headerActions}>
+            <IconButton
+              className={styles.sidePanelToggle}
+              active={isSidePanelMode}
+              onClick={() => onSidePanelModeChange(!isSidePanelMode)}
+              title={isSidePanelMode ? "Side Panel Mode: ON" : "Side Panel Mode: OFF"}
+            >
+              <SidePanelIcon active={isSidePanelMode} />
+            </IconButton>
+          </div>
         </h1>
         <SearchBox
           searchText={searchText}

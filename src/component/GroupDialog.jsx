@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import styles from './GroupDialog.module.css';
 
 const CHROME_COLORS = [
-    { value: 'grey', name: 'グレー', icon: '⚫', hex: '#5f6368' },
-    { value: 'blue', name: '青', icon: '🔵', hex: '#1a73e8' },
-    { value: 'red', name: '赤', icon: '🔴', hex: '#d93025' },
-    { value: 'yellow', name: '黄', icon: '🟡', hex: '#f9ab00' },
-    { value: 'green', name: '緑', icon: '🟢', hex: '#188038' },
-    { value: 'pink', name: 'ピンク', icon: '🩷', hex: '#d01884' },
-    { value: 'purple', name: '紫', icon: '🟣', hex: '#9334e6' },
-    { value: 'cyan', name: 'シアン', icon: '🔵', hex: '#007b83' }
+    { value: 'grey', name: 'Grey', icon: '⚫', hex: '#5f6368' },
+    { value: 'blue', name: 'Blue', icon: '🔵', hex: '#1a73e8' },
+    { value: 'red', name: 'Red', icon: '🔴', hex: '#d93025' },
+    { value: 'yellow', name: 'Yellow', icon: '🟡', hex: '#f9ab00' },
+    { value: 'green', name: 'Green', icon: '🟢', hex: '#188038' },
+    { value: 'pink', name: 'Pink', icon: '🩷', hex: '#d01884' },
+    { value: 'purple', name: 'Purple', icon: '🟣', hex: '#9334e6' },
+    { value: 'cyan', name: 'Cyan', icon: '🔵', hex: '#007b83' }
 ];
 
 const GroupDialog = ({
@@ -42,25 +42,25 @@ const GroupDialog = ({
                 onKeyDown={handleKeyDown}
             >
                 <h2 className={styles.title}>
-                    {mode === 'create' ? '新しいグループ' : 'グループを編集'}
+                    {mode === 'create' ? 'New Group' : 'Edit Group'}
                 </h2>
 
                 <form onSubmit={handleSubmit}>
                     <div className={styles.field}>
-                        <label className={styles.label}>グループ名</label>
+                        <label className={styles.label}>Group Name</label>
                         <input
                             type="text"
                             className={styles.input}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="グループ名を入力"
+                            placeholder="Enter group name"
                             autoFocus
                             maxLength={50}
                         />
                     </div>
 
                     <div className={styles.field}>
-                        <label className={styles.label}>色</label>
+                        <label className={styles.label}>Color</label>
                         <div className={styles.colorGrid}>
                             {CHROME_COLORS.map((colorOption) => (
                                 <button
@@ -84,13 +84,13 @@ const GroupDialog = ({
                             className={styles.cancelButton}
                             onClick={onCancel}
                         >
-                            キャンセル
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             className={styles.confirmButton}
                         >
-                            {mode === 'create' ? '作成' : '保存'}
+                            {mode === 'create' ? 'Create' : 'Save'}
                         </button>
                     </div>
                 </form>

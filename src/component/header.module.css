@@ -4,9 +4,15 @@
   top: 0;
   z-index: 100;
   width: 100%;
-  background-color: #fff;
-  border-bottom: 1px solid #c8d8e9;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 2px var(--shadow-color);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  margin-right: 6px;
 }
 
 .header__inner {
@@ -19,7 +25,7 @@
 .header.sidePanelMode .header__inner {
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
 }
 
 .title {
@@ -42,6 +48,10 @@
 .header.sidePanelMode .title {
   width: 100%;
   justify-content: space-between;
+}
+
+.header.sidePanelMode .headerActions {
+  margin-right: 0;
 }
 
 .icon {

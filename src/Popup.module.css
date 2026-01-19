@@ -14,7 +14,7 @@
 }
 
 .container {
-  margin: 68px 6px 24px 6px;
+  margin: 68px 8px 46px 8px;
 }
 
 .empty {
@@ -28,10 +28,10 @@
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--shadow-color);
   gap: 8px;
   min-width: 200px;
 }
@@ -42,11 +42,11 @@
 
 .groupTitlePreview {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .groupCountPreview {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 12px;
 }

@@ -21,28 +21,20 @@
   font-weight: 400;
   font-family: sans-serif;
   font-style: normal;
-  align-items: center;
   display: block;
   width: 300px;
-  padding: 6px 6px;
-  border: solid 1px #e9ecef;
-  border-radius: 4px 0 0 4px;
+  padding: 6px 10px;
+  border: solid 1px var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .sidePanelMode .input {
   width: auto;
   flex: 1;
-}
-
-.clearButton,
-.searchButton {
-  position: relative;
-  display: block;
-  background-color: #e9ecef;
-  border: solid 1px #e9ecef;
-  border-radius: 0 4px 4px 0;
-  height: 35px;
-  width: 35px;
 }
 
 .searchButton,
@@ -51,76 +43,38 @@
 }
 
 .searchButton {
-  margin-left: 4px;
-}
-
-.searchButton::before,
-.searchButton::after {
-  content: '';
-  display: block;
-  width: calc(100% - 6px);
-  height: 2px;
-  position: absolute;
-  margin: auto;
-  top: 50%;
-  left: 0;
-  right: 0;
-  background-color: #6b7280;
-  border-radius: 3px;
-  transition: all 0.2s;
-}
-
-.searchButton::before {
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  border: solid 2px #6b7280;
-  background-color: #ffffff;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-70%, -62%);
-  z-index: 2;
-}
-
-.searchButton::after {
-  transform: rotate(45deg);
-  width: 10px;
-  top: 70%;
-  left: 40%;
-}
-
-.searchButton:hover::before {
-  border-color: #2563eb;
-}
-
-.searchButton:hover::after {
-  background-color: #2563eb;
+  margin-left: 6px;
 }
 
 .clearButton {
-  border-radius: 50%;
-  margin-left: -40px;
+  position: absolute;
+  right: 100px;
+  background: none;
+  border: none;
+  cursor: pointer;
   opacity: 0;
-  transition: all 0.4s;
-  height: 26px;
-  width: 26px;
+  transition: opacity 0.2s;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.box:hover .clearButton {
+  opacity: 1;
 }
 
 .clearButton::before,
 .clearButton::after {
   content: '';
   display: block;
-  width: calc(100% - 6px);
+  width: 14px;
   height: 2px;
+  background-color: var(--text-secondary);
+  border-radius: 1px;
   position: absolute;
-  margin: auto;
-  top: 50%;
-  left: 0;
-  right: 0;
-  background-color: #6b7280;
-  border-radius: 3px;
-  transition: all 0.2s;
 }
 
 .clearButton::after {
@@ -133,11 +87,11 @@
 
 .clearButton:hover::before,
 .clearButton:hover::after {
-  background-color: #2563eb;
+  background-color: var(--accent-color);
 }
 
 .filterToggleButton {
   width: 35px;
   height: 35px;
-  margin-left: 8px;
+  margin-left: 6px;
 }

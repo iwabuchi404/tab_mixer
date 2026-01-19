@@ -13,14 +13,14 @@
 }
 
 .dialog {
-        background: white;
+        background: var(--bg-primary);
         border-radius: 8px;
         padding: 16px;
         width: 280px;
         max-width: 100%;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px var(--shadow-color);
         animation: slideIn 0.2s ease-out;
 }
 
@@ -28,7 +28,7 @@
         margin: 0 0 12px 0;
         font-size: 16px;
         font-weight: 600;
-        color: #1f2937;
+        color: var(--text-primary);
 }
 
 .field {
@@ -40,13 +40,15 @@
         margin-bottom: 6px;
         font-size: 13px;
         font-weight: 500;
-        color: #374151;
+        color: var(--text-secondary);
 }
 
 .input {
         width: 100%;
         padding: 6px 10px;
-        border: 1px solid #d1d5db;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
         border-radius: 6px;
         font-size: 13px;
         outline: none;
@@ -55,8 +57,8 @@
 }
 
 .input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px var(--shadow-color);
 }
 
 .colorGrid {
@@ -84,7 +86,7 @@
 }
 
 .colorButton.selected {
-        border-color: #3b82f6;
+        border-color: var(--accent-color);
 }
 
 .colorCircle {
@@ -93,7 +95,7 @@
         height: 100%;
         border-radius: 50%;
         background-color: var(--color);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
 }
 
 .actions {
@@ -114,23 +116,23 @@
 }
 
 .cancelButton {
-        background: white;
-        border: 1px solid #d1d5db;
-        color: #374151;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
 }
 
 .cancelButton:hover {
-        background-color: #f3f4f6;
+        background-color: var(--bg-hover);
 }
 
 .confirmButton {
-        background: #3b82f6;
+        background: var(--accent-color);
         border: none;
         color: white;
 }
 
 .confirmButton:hover {
-        background-color: #2563eb;
+        background-color: var(--accent-hover);
 }
 
 @keyframes slideIn {

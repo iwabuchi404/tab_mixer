@@ -1,0 +1,73 @@
+:root {
+    /* Light Mode Palette */
+    --bg-base: #f1f3f4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-hover: #f1f5f9;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --border-color: #dadce0;
+    --shadow-color: rgba(60, 64, 67, 0.1);
+    --accent-color: #1a73e8;
+    --accent-hover: #174ea6;
+    --error-color: #d93025;
+
+    --tab-active-bg: #e8f0fe;
+    --tab-group-border: #8ab4f8;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-base: #232323;
+        /* 最背面 */
+        --bg-primary: #383838;
+        /* メイン要素の背景 */
+        --bg-secondary: #4a4a4a;
+        /* サブ要素、リストアイテム等 (Adjusted for better stepping) */
+        --bg-hover: #5d5d5d;
+        /* ホバー時 (Distinct contrast from secondary) */
+        --text-primary: #f0f0f0;
+        /* さらに読みやすく */
+        --text-secondary: #b0b0b0;
+        /* 補助情報の読みやすさ向上 */
+        --border-color: #555555;
+        /* 境界線をより明確に */
+        --shadow-color: rgba(0, 0, 0, 0.4);
+        --accent-color: #a0a0a0;
+        /* アクティブ状態のグレー */
+        --accent-hover: #c0c0c0;
+        --error-color: #af645e;
+        /* 彩度を抑えたエラー色 */
+
+        --tab-active-bg: #5d5d5d;
+        /* アクティブなタブ (bg-hoverと同期) */
+        --tab-group-border: #6d6d6d;
+    }
+}
+
+body {
+    margin: 0;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 5px;
+    border: 2px solid var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

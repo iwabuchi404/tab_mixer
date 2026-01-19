@@ -33,13 +33,13 @@
 }
 
 .container {
-  padding: 16px;
+  padding: 12px 12px 16px 12px;
   width: 100%;
   box-sizing: border-box;
-  background-color: #fff;
-  border: #e9ecef solid 1px;
-  border-radius: 6px;
-  box-shadow: #e1e1e1 0 0 12px;
+  background-color: var(--bg-primary);
+  border: var(--border-color) solid 1px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px var(--shadow-color);
 }
 
 .container+.container {
@@ -82,7 +82,8 @@
   padding-left: 36px;
   font-size: 14px;
   text-overflow: ellipsis;
-  border: solid 1px #e9ecef;
+  border: solid 1px var(--border-color);
+  background-color: var(--bg-secondary);
   border-radius: 4px;
   margin-top: 8px;
 }
@@ -111,7 +112,7 @@
   justify-content: center;
   height: 20px;
   width: 20px;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-hover);
   border: none;
   cursor: pointer;
   border-radius: 4px;
@@ -141,10 +142,10 @@
 
 /* ドラッグオーバーレイのスタイル */
 .dragOverlay {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px var(--shadow-color);
   /* transform: rotate(3deg); */
   opacity: 0.4;
   pointer-events: none;

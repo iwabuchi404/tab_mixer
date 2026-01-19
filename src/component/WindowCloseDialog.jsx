@@ -6,19 +6,19 @@ const WindowCloseDialog = ({ onConfirm, onCancel }) => {
         <div className={styles.overlay}>
             <div className={styles.dialog}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>ウィンドウを閉じる</h2>
+                    <h2 className={styles.title}>Close Window</h2>
                 </div>
                 <div className={styles.content}>
                     <p className={styles.message}>
-                        このウィンドウのすべてのタブを閉じますか？
+                        Do you want to close all tabs in this window?
                     </p>
                 </div>
                 <div className={styles.footer}>
                     <button className={styles.cancelButton} onClick={onCancel}>
-                        キャンセル
+                        Cancel
                     </button>
                     <button className={styles.confirmButton} onClick={onConfirm}>
-                        ウィンドウを閉じる
+                        Close Window
                     </button>
                 </div>
             </div>

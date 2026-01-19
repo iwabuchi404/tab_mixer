@@ -98,7 +98,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
   const getMenuItems = () => {
     const items = [
       {
-        label: '新規グループ',
+        label: 'New Group',
         icon: '📁',
         onClick: () => setDialogOpen(true)
       }
@@ -106,7 +106,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
 
     if (existingGroups.length > 0) {
       items.push({
-        label: 'グループに追加',
+        label: 'Add to Group',
         icon: '📂',
         submenu: existingGroups.map(group => ({
           label: group.title || 'Untitled',
@@ -118,7 +118,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
 
     if (tabData.groupId !== -1) {
       items.push({
-        label: 'グループ解除',
+        label: 'Ungroup',
         icon: '🔓',
         onClick: handleRemoveFromGroup
       });

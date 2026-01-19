@@ -71,22 +71,22 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
 
     const getGroupMenuItems = () => [
         {
-            label: '名前を編集',
+            label: 'Rename',
             icon: '✏️',
             onClick: () => setDialogOpen(true)
         },
         {
-            label: '色を変更',
+            label: 'Change Color',
             icon: '🎨',
             onClick: () => setDialogOpen(true)
         },
         {
-            label: 'グループ解除',
+            label: 'Ungroup',
             icon: '🔓',
             onClick: handleUngroupAll
         },
         {
-            label: 'グループを閉じる',
+            label: 'Close Group',
             icon: '🗑️',
             onClick: () => setConfirmDialogOpen(true)
         }
