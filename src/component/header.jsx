@@ -29,7 +29,7 @@ const Header = ({ searchText, setSearchText, onSearch, filterMode, onFilterModeC
       <div className={styles.header__inner}>
         <h1 className={styles.title}>
           <div className={styles.titleMain}>
-            <img src='/icons/icon.svg' className={styles.icon} />
+            <img src='/icons/60icon.png' className={styles.icon} />
             Tab Mixer
           </div>
           <IconButton
