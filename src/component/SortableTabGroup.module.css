@@ -1,54 +1,47 @@
 .sortableContainer {
     display: flex;
-    align-items: stretch;
+    flex-direction: column;
+    align-items: flex-start;
     position: relative;
     transition: background-color 0.2s ease;
     margin-bottom: 8px;
     background-color: transparent;
     border-radius: 4px;
-    overflow: hidden;
     box-sizing: border-box;
     width: 100%;
-    border-left: 4px solid transparent;
-    /* TabItemと位置を揃える */
 }
 
 .sortableContainer:last-child {
     margin-bottom: 0px;
 }
 
-.sortableContainer:hover {}
-
-.dragHandle {
+.headerRow {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 24px;
-    cursor: grab;
-    color: #9ca3af;
-    padding: 4px;
-    flex-shrink: 0;
-    background-color: #f9fafb;
-    border: 1px solid #e2e8f0;
+    align-items: stretch;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    box-sizing: border-box;
+    background-color: transparent;
+}
+
+.headerRow.selected {
+    background-color: var(--selected-bg);
+    outline: 2px solid var(--selected-border);
+    outline-offset: -2px;
+    z-index: 10;
+}
+
+.groupDragHandle {
+    height: 34px;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
     border-right: none;
     border-radius: 4px 0 0 4px;
-    transition: all 0.2s ease;
-    margin-top: 0;
 }
 
-.dragHandle:hover {
-    background-color: #f3f4f6;
-    color: #6b7280;
-}
-
-.dragHandle:active {
-    cursor: grabbing;
-    background-color: #e5e7eb;
-}
-
-.dragIcon {
-    pointer-events: none;
+.selected .groupDragHandle {
+    border-color: var(--selected-border);
 }
 
 .groupContent {
@@ -63,15 +56,30 @@
     border-left: none !important;
 }
 
+.groupTabsContainer {
+    width: 100%;
+    padding-left: 24px;
+    display: block;
+    overflow: hidden;
+    opacity: 0;
+    height: 0;
+    transition: all .25s ease-in;
+    box-sizing: border-box;
+}
+
+.groupTabsContainer.open {
+    opacity: 1;
+    margin-top: 8px;
+    margin-bottom: 0;
+    height: auto;
+}
+
 /* ドラッグ中は他の操作を無効化 */
 .sortableContainer.dragging * {
     pointer-events: none;
 }
 
-.sortableContainer:hover .dragHandle {
-    color: #6b7280;
-    background-color: #f3f4f6;
-}
+
 
 @media (pointer: coarse) {
     .dragHandle {

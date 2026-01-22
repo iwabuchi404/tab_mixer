@@ -2,9 +2,12 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import TabGroup from './TabGroup';
+import DragHandle from './DragHandle';
 import styles from './SortableTabGroup.module.css';
 
-const SortableTabGroup = ({ groupInfo, children, onGroupUpdate, windowId }) => {
+const SortableTabGroup = ({ groupInfo, children, onGroupUpdate, windowId, isSelected, onSelect }) => {
+    const [isOpen, setIsOpen] = React.useState(true);
+
     const {
         attributes,
         listeners,
@@ -34,34 +37,32 @@ const SortableTabGroup = ({ groupInfo, children, onGroupUpdate, windowId }) => {
             style={style}
             className={`${styles.sortableContainer} ${isDragging ? styles.dragging : ''}`}
         >
-            <div className={styles.dragHandle} {...attributes} {...listeners}>
-                <svg
-                    width="8"
-                    height="16"
-                    viewBox="0 0 8 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={styles.dragIcon}
-                >
-                    <circle cx="2" cy="3" r="1" fill="currentColor" />
-                    <circle cx="6" cy="3" r="1" fill="currentColor" />
-                    <circle cx="2" cy="8" r="1" fill="currentColor" />
-                    <circle cx="6" cy="8" r="1" fill="currentColor" />
-                    <circle cx="2" cy="13" r="1" fill="currentColor" />
-                    <circle cx="6" cy="13" r="1" fill="currentColor" />
-                </svg>
+            <div className={`${styles.headerRow} ${isSelected ? styles.selected : ''}`}>
+                <DragHandle
+                    attributes={attributes}
+                    listeners={listeners}
+                    isSelected={isSelected}
+                    className={styles.groupDragHandle}
+                />
+
+                <div className={styles.groupContent}>
+                    <TabGroup
+                        groupInfo={groupInfo}
+                        onGroupUpdate={onGroupUpdate}
+                        isSelected={isSelected}
+                        onSelect={onSelect}
+                        isOpen={isOpen}
+                        onToggle={setIsOpen}
+                        headerOnly={true}
+                    />
+                </div>
             </div>
 
-            <div className={styles.groupContent}>
-                <TabGroup
-                    groupInfo={groupInfo}
-                    onGroupUpdate={onGroupUpdate}
-                >
-                    {children}
-                </TabGroup>
+            <div className={`${styles.groupTabsContainer} ${isOpen ? styles.open : ''}`}>
+                {children}
             </div>
         </div>
     );
 };
 
-export default SortableTabGroup;
+export default React.memo(SortableTabGroup);

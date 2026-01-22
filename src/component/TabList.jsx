@@ -13,7 +13,7 @@ import ExpandIcon from './ExpandIcon';
 import CloseIcon from './CloseIcon';
 import WindowCloseDialog from './WindowCloseDialog';
 
-const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, existingGroups = [] }) => {
+const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, existingGroups = [], selectedTabIds = [], selectedGroupIds = [], onSelect }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
@@ -72,6 +72,8 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
                   groupInfo={group}
                   onGroupUpdate={onTabReorder}
                   windowId={windowId}
+                  isSelected={selectedGroupIds.includes(item.id)}
+                  onSelect={onSelect}
                 >
                   <SortableContext
                     items={group.tabs.map(tab => tab.id)}
@@ -84,6 +86,8 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
                         windowId={windowId}
                         existingGroups={existingGroups}
                         onTabReorder={onTabReorder}
+                        isSelected={selectedTabIds.includes(tab.id)}
+                        onSelect={onSelect}
                       />
                     ))}
                   </SortableContext>
@@ -98,6 +102,8 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
                   windowId={windowId}
                   existingGroups={existingGroups}
                   onTabReorder={onTabReorder}
+                  isSelected={selectedTabIds.includes(tab.id)}
+                  onSelect={onSelect}
                 />
               );
             }

@@ -14,6 +14,11 @@
 
     --tab-active-bg: #e8f0fe;
     --tab-group-border: #8ab4f8;
+
+    --selected-bg: rgba(26, 115, 232, 0.15);
+    --selected-border: #1a73e8;
+    --lasso-bg: rgba(26, 115, 232, 0.2);
+    --lasso-border: rgba(26, 115, 232, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +47,11 @@
         --tab-active-bg: #5d5d5d;
         /* アクティブなタブ (bg-hoverと同期) */
         --tab-group-border: #6d6d6d;
+
+        --selected-bg: rgba(255, 255, 255, 0.1);
+        --selected-border: #a0a0a0;
+        --lasso-bg: rgba(160, 160, 160, 0.2);
+        --lasso-border: rgba(160, 160, 160, 0.6);
     }
 }
 

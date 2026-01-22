@@ -50,3 +50,43 @@
   color: var(--text-secondary);
   font-size: 12px;
 }
+
+.dragOverlay {
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.tabItemStub {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--selected-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.faviconStub {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.titleStub {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selectionBox {
+  position: fixed;
+  border: 1px solid var(--lasso-border);
+  background-color: var(--lasso-bg);
+  pointer-events: none;
+  z-index: 10000;
+}

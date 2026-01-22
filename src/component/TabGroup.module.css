@@ -26,6 +26,14 @@
   box-sizing: border-box;
   gap: 0;
   color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.groupTitle.selected {
+  border-color: var(--selected-border);
+  background-color: transparent !important;
+  outline: none;
+  /* headerRow handles the outline */
 }
 
 .groupHeaderLeft {
@@ -95,25 +103,9 @@
   margin-left: 4px;
 }
 
-.menuButton {
-  opacity: 0.7;
-  transition: opacity 0.2s;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px 6px;
-  font-size: 16px;
-  color: var(--text-secondary);
-  box-shadow: 0 1px 2px var(--shadow-color);
-}
 
-.menuButton:hover {
-  opacity: 1;
-  background-color: var(--bg-hover);
-}
 
-.groupTitle:hover .menuButton {
+.groupTitle:hover [class*="MenuButton_menuButton"] {
   opacity: 1;
 }
 

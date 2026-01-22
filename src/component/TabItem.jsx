@@ -2,11 +2,12 @@
 import React, { useState, useRef } from 'react';
 import styles from './TabItem.module.css';
 import DropdownMenu from './DropdownMenu';
+import MenuButton from './MenuButton';
 import GroupDialog from './GroupDialog';
 import CloseIcon from './CloseIcon';
 import { CHROME_COLORS } from './GroupDialog';
 
-const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], onTabReorder, className = "" }) => {
+const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], onTabReorder, className = "", isSelected = false, onSelect }) => {
   const [faviconError, setFaviconError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -22,15 +23,20 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
   const mousedownEvent = (e, tabId, windowId) => {
     if (e.button == 1) {
       e.preventDefault();
-      handleCloseTab(tabId);
+      handleCloseTab(e);
     }
-    return
   }
 
-  // タブをアクティブにする関数
-  const handleTabClick = async () => {
+  // タブをアクティブにするか、選択状態を更新する関数
+  const handleTabClick = async (e) => {
     // ドラッグ中は操作を無効化
     if (isDragging) return;
+
+    // Ctrl/Shiftキーが押されている場合、または選択ハンドラーがある場合は選択処理
+    if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+      onSelect(tabData.id, e);
+      return;
+    }
 
     try {
       const window = await chrome.windows.get(windowId);
@@ -40,6 +46,11 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
       }
       await chrome.windows.update(windowId, updateParams);
       await chrome.tabs.update(tabData.id, { active: true });
+
+      // 単一クリックでも選択ハンドラーがある場合はそれを呼び出す（単一選択）
+      if (onSelect) {
+        onSelect(tabData.id, e);
+      }
     } catch (error) {
       console.error('Error activating tab:', error);
     }
@@ -129,7 +140,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
 
   return (
     <div
-      className={`${styles.tabItem} ${tabData.active ? styles.activeTab : ''} ${tabData.highlighted ? styles.highlighted : ''} ${isDragging ? styles.dragging : ''} ${className}`}
+      className={`${styles.tabItem} ${tabData.active ? styles.activeTab : ''} ${isSelected ? styles.selected : ''} ${tabData.highlighted ? styles.highlighted : ''} ${isDragging ? styles.dragging : ''} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -157,17 +168,11 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
 
       <div className={styles.tabActions}>
         {(isHovered || menuOpen) && !isDragging && (
-          <button
+          <MenuButton
             ref={menuButtonRef}
-            className={`${styles.menuButton} ${menuOpen ? styles.visible : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
-            aria-label="Menu"
-          >
-            ⋮
-          </button>
+            isOpen={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
+          />
         )}
 
         <CloseIcon
@@ -200,4 +205,4 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
   );
 };
 
-export default TabItem;
+export default React.memo(TabItem);

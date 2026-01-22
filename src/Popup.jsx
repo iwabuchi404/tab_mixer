@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -15,6 +15,8 @@ import TabList from './component/TabList';
 import Header from './component/header';
 import Footer from './component/footer';
 import TabItem from './component/TabItem';
+import DropdownMenu from './component/DropdownMenu';
+import GroupDialog from './component/GroupDialog';
 import { CHROME_COLORS } from './component/GroupDialog';
 import styles from './Popup.module.css';
 
@@ -28,6 +30,19 @@ const Popup = () => {
   const [activeDragTab, setActiveDragTab] = useState(null);
   const [activeDragGroup, setActiveDragGroup] = useState(null);
   const [isSidePanelMode, setIsSidePanelMode] = useState(false);
+  const [selectedTabIds, setSelectedTabIds] = useState([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState([]); // New state for selected groups
+  const [lastClickedId, setLastClickedId] = useState(null);
+  const [selectionBox, setSelectionBox] = useState(null);
+  const [isLassoing, setIsLassoing] = useState(false);
+  const isLassoingRef = useRef(false);
+  const tabRectsCache = useRef([]);
+  const lassoStartPos = useRef({ x: 0, y: 0 });
+  const [footerMenuOpen, setFooterMenuOpen] = useState(false);
+  const footerMenuAnchorRef = useRef(null);
+  const [isBulkGroupDialogOpen, setIsBulkGroupDialogOpen] = useState(false);
+  const isInternalChange = useRef(false);
+  const hasDragged = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -124,8 +139,10 @@ const Popup = () => {
         currentWindow: activeWindowId === parseInt(windowId),
         highlighted: false,
         order: data.order
-      })).sort((window) => {
-        return window.windowId == activeWindowId ? -1 : 1;
+      })).sort((a, b) => {
+        if (a.windowId === activeWindowId) return -1;
+        if (b.windowId === activeWindowId) return 1;
+        return 0;
       });
       setWindowTabs(sortedWindows);
       applySearch(sortedWindows, searchText, filterMode);
@@ -255,6 +272,379 @@ const Popup = () => {
     applySearch(windowTabs, searchText, newFilterMode);
   };
 
+  // タブまたはグループ選択の処理 (Ctrl/Shift/通常クリック)
+  const handleSelect = (id, event, type = 'tab') => {
+    const isShift = event.shiftKey;
+    const isCtrl = event.ctrlKey || event.metaKey;
+
+    if (type === 'tab') {
+      setSelectedTabIds(prev => {
+        let next;
+        if (isShift && lastClickedId !== null) {
+          // タブの全IDリスト（表示順）を取得
+          const allDisplayTabIds = displayTabs.flatMap(win => {
+            return win.order.flatMap(item => {
+              if (item.type === 'tab') return [item.id];
+              if (item.type === 'group' && win.groups[item.id]) {
+                return win.groups[item.id].tabs.map(t => t.id);
+              }
+              return [];
+            });
+          });
+
+          const startIndex = allDisplayTabIds.indexOf(lastClickedId);
+          const endIndex = allDisplayTabIds.indexOf(id);
+
+          if (startIndex !== -1 && endIndex !== -1) {
+            const rangeIds = allDisplayTabIds.slice(
+              Math.min(startIndex, endIndex),
+              Math.max(startIndex, endIndex) + 1
+            );
+            const newSet = new Set(isCtrl ? prev : []);
+            rangeIds.forEach(tabId => newSet.add(tabId));
+            next = Array.from(newSet);
+          } else {
+            next = isCtrl ? (prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]) : [id];
+          }
+        } else if (isCtrl) {
+          next = prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id];
+        } else {
+          next = [id];
+          setSelectedGroupIds([]); // 通常クリック時はグループ選択を解除
+        }
+        return next;
+      });
+      setLastClickedId(id);
+    } else if (type === 'group') {
+      setSelectedGroupIds(prev => {
+        if (isCtrl) {
+          return prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id];
+        } else {
+          setSelectedTabIds([]); // 通常クリック時はタブ選択を解除
+          return [id];
+        }
+      });
+    }
+  };
+
+  // ラッソ（ドラッグ）選択の開始
+  const handleMouseDown = (e) => {
+    // インタラクティブ要素の上なら無視
+    if (e.button !== 0 || e.target.closest('button') || e.target.closest('input') || e.target.closest('a')) return;
+
+    // ドラッグハンドルなら完全に無視（dnd-kitに任せる）
+    if (e.target.closest('[data-drag-handle]')) return;
+
+    // 背景をクリックした場合は選択解除
+    const isTab = e.target.closest('[data-tab-id]');
+    const isGroup = e.target.closest('[data-group-id]');
+    if (!isTab && !isGroup && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      setSelectedTabIds([]);
+      setSelectedGroupIds([]);
+      setLastClickedId(null);
+    }
+
+    setIsLassoing(true);
+    lassoStartPos.current = { x: e.clientX, y: e.clientY };
+    setSelectionBox({
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY
+    });
+
+    // タブとグループの座標をキャッシュ
+    const tabItems = document.querySelectorAll('[data-tab-id]');
+    const groupItems = document.querySelectorAll('[data-group-id]');
+    const cache = [];
+
+    tabItems.forEach(el => {
+      cache.push({
+        id: Number(el.getAttribute('data-tab-id')),
+        type: 'tab',
+        rect: el.getBoundingClientRect()
+      });
+    });
+
+    groupItems.forEach(el => {
+      cache.push({
+        id: Number(el.getAttribute('data-group-id')),
+        type: 'group',
+        rect: el.getBoundingClientRect()
+      });
+    });
+
+    tabRectsCache.current = cache;
+    hasDragged.current = false;
+  };
+
+  useEffect(() => {
+    const handleWindowMouseMove = (e) => {
+      if (!isLassoingRef.current) return;
+
+      const startX = lassoStartPos.current.x;
+      const startY = lassoStartPos.current.y;
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+
+      setSelectionBox({
+        startX,
+        startY,
+        currentX,
+        currentY
+      });
+
+      // 移動距離が十分な場合のみ、リアルタイムで選択状態を更新
+      const dist = Math.sqrt(Math.pow(startX - currentX, 2) + Math.pow(startY - currentY, 2));
+      if (dist > 5) {
+        hasDragged.current = true;
+        const rect = {
+          left: Math.min(startX, currentX),
+          top: Math.min(startY, currentY),
+          right: Math.max(startX, currentX),
+          bottom: Math.max(startY, currentY)
+        };
+
+        const newSelectedTabIds = [];
+        const newSelectedGroupIds = [];
+
+        tabRectsCache.current.forEach(item => {
+          const r = item.rect;
+          if (!(r.left > rect.right || r.right < rect.left || r.top > rect.bottom || r.bottom < rect.top)) {
+            if (item.type === 'tab') {
+              newSelectedTabIds.push(item.id);
+            } else {
+              newSelectedGroupIds.push(item.id);
+            }
+          }
+        });
+
+        setSelectedTabIds(prev => {
+          if (prev.length === newSelectedTabIds.length && prev.every((id, i) => id === newSelectedTabIds[i])) {
+            return prev;
+          }
+          return newSelectedTabIds;
+        });
+
+        setSelectedGroupIds(prev => {
+          if (prev.length === newSelectedGroupIds.length && prev.every((id, i) => id === newSelectedGroupIds[i])) {
+            return prev;
+          }
+          return newSelectedGroupIds;
+        });
+      }
+    };
+
+    const handleWindowMouseUp = (e) => {
+      setIsLassoing(false);
+      isLassoingRef.current = false;
+      setSelectionBox(null);
+      tabRectsCache.current = [];
+
+      // ドラッグが発生していた場合、この後のクリックイベントを無効化する
+      if (hasDragged.current) {
+        const preventClick = (event) => {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+          window.removeEventListener('click', preventClick, true);
+        };
+        window.addEventListener('click', preventClick, true);
+        // 万が一クリックが発生しなかった場合のためにタイマーでも解除
+        setTimeout(() => window.removeEventListener('click', preventClick, true), 100);
+      }
+    };
+
+    if (isLassoing) {
+      isLassoingRef.current = true;
+      window.addEventListener('mousemove', handleWindowMouseMove);
+      window.addEventListener('mouseup', handleWindowMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [isLassoing]);
+
+  // Bulk operation handlers
+  const handleFooterMenuClick = (anchorRef, e) => {
+    e.stopPropagation();
+    footerMenuAnchorRef.current = anchorRef.current;
+    setFooterMenuOpen(true);
+  };
+
+  const handleCloseSelectedTabs = async () => {
+    if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    try {
+      const tabsInSelectedGroups = [];
+      for (const groupId of selectedGroupIds) {
+        const tabs = await chrome.tabs.query({ groupId });
+        tabsInSelectedGroups.push(...tabs.map(t => t.id));
+      }
+      const allTabIds = Array.from(new Set([...selectedTabIds, ...tabsInSelectedGroups]));
+
+      if (allTabIds.length > 0) {
+        await chrome.tabs.remove(allTabIds);
+        setSelectedTabIds([]);
+        setSelectedGroupIds([]);
+        updateTabs();
+      }
+    } catch (error) {
+      console.error('Failed to close selected tabs:', error);
+    }
+  };
+
+  const handleMoveToNewWindow = async () => {
+    if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    try {
+      const tabsInSelectedGroups = [];
+      for (const groupId of selectedGroupIds) {
+        const tabs = await chrome.tabs.query({ groupId });
+        tabsInSelectedGroups.push(...tabs.map(t => t.id));
+      }
+      const allTabIds = Array.from(new Set([...selectedTabIds, ...tabsInSelectedGroups]));
+
+      if (allTabIds.length > 0) {
+        const [firstTabId, ...otherTabIds] = allTabIds;
+        const newWindow = await chrome.windows.create({ tabId: firstTabId });
+        if (otherTabIds.length > 0) {
+          await chrome.tabs.move(otherTabIds, { windowId: newWindow.id, index: -1 });
+        }
+        setSelectedTabIds([]);
+        setSelectedGroupIds([]);
+        updateTabs();
+      }
+    } catch (error) {
+      console.error('Failed to move selected tabs to new window:', error);
+    }
+  };
+
+  const handleBulkAddToGroup = async (groupId) => {
+    if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    try {
+      const tabsInSelectedGroups = [];
+      for (const sgid of selectedGroupIds) {
+        const tabs = await chrome.tabs.query({ groupId: sgid });
+        tabsInSelectedGroups.push(...tabs.map(t => t.id));
+      }
+      const allTabIds = Array.from(new Set([...selectedTabIds, ...tabsInSelectedGroups]));
+
+      if (allTabIds.length > 0) {
+        // Find target window from the first tab
+        const tabs = await chrome.tabs.query({});
+        const targetWindowId = tabs.find(t => t.id === allTabIds[0])?.windowId;
+        const validTabIds = allTabIds.filter(id => {
+          const t = tabs.find(tab => tab.id === id);
+          return t && t.windowId === targetWindowId;
+        });
+
+        if (validTabIds.length > 0) {
+          await chrome.tabs.group({ tabIds: validTabIds, groupId });
+          setSelectedTabIds([]);
+          setSelectedGroupIds([]);
+          updateTabs();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to add selected items to group:', error);
+    }
+  };
+
+  const handleCreateBulkGroup = async ({ name, color }) => {
+    if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    try {
+      const tabsInSelectedGroups = [];
+      for (const sgid of selectedGroupIds) {
+        const tabs = await chrome.tabs.query({ groupId: sgid });
+        tabsInSelectedGroups.push(...tabs.map(t => t.id));
+      }
+      const allTabIds = Array.from(new Set([...selectedTabIds, ...tabsInSelectedGroups]));
+
+      if (allTabIds.length > 0) {
+        const tabs = await chrome.tabs.query({});
+        const targetWindowId = tabs.find(t => t.id === allTabIds[0])?.windowId;
+        const validTabIds = allTabIds.filter(id => {
+          const t = tabs.find(tab => tab.id === id);
+          return t && t.windowId === targetWindowId;
+        });
+
+        if (validTabIds.length > 0) {
+          const groupId = await chrome.tabs.group({ tabIds: validTabIds });
+          await chrome.tabGroups.update(groupId, { title: name, color });
+          setIsBulkGroupDialogOpen(false);
+          setSelectedTabIds([]);
+          setSelectedGroupIds([]);
+          updateTabs();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create group for selected items:', error);
+    }
+  };
+
+  const getBulkMenuItems = () => {
+    const totalSelected = selectedTabIds.length + selectedGroupIds.length;
+    const items = [
+      {
+        label: `Close ${totalSelected} Items`,
+        icon: '🗑️',
+        onClick: handleCloseSelectedTabs
+      },
+      {
+        label: 'Move to New Window',
+        icon: '🗔',
+        onClick: handleMoveToNewWindow
+      },
+      {
+        label: 'New Group',
+        icon: '📁',
+        onClick: () => setIsBulkGroupDialogOpen(true)
+      }
+    ];
+
+    const currentGroups = Object.values(groups);
+    if (currentGroups.length > 0 && (selectedTabIds.length > 0 || selectedGroupIds.length > 0)) {
+      let targetWindowId = -1;
+      const targetId = selectedTabIds.length > 0 ? selectedTabIds[0] : selectedGroupIds[0];
+      const isTabSearch = selectedTabIds.length > 0;
+
+      for (const win of displayTabs) {
+        const found = win.order.some(item => {
+          if (isTabSearch) {
+            if (item.type === 'tab' && item.id === targetId) return true;
+            if (item.type === 'group' && win.groups[item.id]) {
+              return win.groups[item.id].tabs.some(t => t.id === targetId);
+            }
+          } else {
+            return item.type === 'group' && item.id === targetId;
+          }
+          return false;
+        });
+
+        if (found) {
+          targetWindowId = win.windowId;
+          break;
+        }
+      }
+
+      const relevantGroups = currentGroups.filter(g => g.windowId === targetWindowId);
+
+      if (relevantGroups.length > 0) {
+        items.push({
+          label: 'Add to Group',
+          icon: '📂',
+          submenu: relevantGroups.map(group => ({
+            label: group.title || 'Untitled',
+            icon: CHROME_COLORS.find(c => c.value === group.color)?.icon || '⚫',
+            onClick: () => handleBulkAddToGroup(group.id)
+          }))
+        });
+      }
+    }
+
+    return items;
+  };
+
   // サイドパネルモード変更時の処理
   const handleSidePanelModeChange = async (newMode) => {
     setIsSidePanelMode(newMode);
@@ -320,6 +710,7 @@ const Popup = () => {
     const { active, over } = event;
     setActiveDragTab(null);
     setActiveDragGroup(null);
+    isInternalChange.current = true;
 
     if (!over || active.id === over.id) {
       return;
@@ -368,45 +759,64 @@ const Popup = () => {
 
     try {
       if (activeType === 'tab') {
-        // タブの移動ロジック
-        let sourceWindowId, sourceGroupId = -1;
+        const initialTabsToMove = selectedTabIds.includes(active.id) ? selectedTabIds : [active.id];
+
+        // 1. 移動するタブを表示順にソート
+        const allTabIdsOrdered = windowTabs.flatMap(win => {
+          return win.order.flatMap(item => {
+            if (item.type === 'tab') return [item.id];
+            if (item.type === 'group' && win.groups[item.id]) {
+              return win.groups[item.id].tabs.map(t => t.id);
+            }
+            return [];
+          });
+        });
+        const tabsToMove = [...initialTabsToMove].sort((a, b) =>
+          allTabIdsOrdered.indexOf(a) - allTabIdsOrdered.indexOf(b)
+        );
+
+        // 2. 移動元のウィンドウIDを特定
+        let activeTabSourceWindowId = -1;
         for (const window of windowTabs) {
-          if (window.tabs.find(t => t.id === active.id)) {
-            sourceWindowId = window.windowId;
+          if (window.tabs.find(t => t.id === active.id) ||
+            Object.values(window.groups).some(g => g.tabs.find(t => t.id === active.id))) {
+            activeTabSourceWindowId = window.windowId;
             break;
           }
-          for (const groupId in window.groups) {
-            if (window.groups[groupId].tabs.find(t => t.id === active.id)) {
-              sourceWindowId = window.windowId;
-              sourceGroupId = parseInt(groupId);
-              break;
-            }
-          }
-          if (sourceWindowId) break;
         }
 
-        if (sourceWindowId !== targetWindowId) {
-          await chrome.tabs.move(active.id, { windowId: targetWindowId, index: targetIndex });
+        // 3. 移動実行
+        // 同一ウィンドウかつ前方向への移動の場合、インデックスがズレるが、chrome.tabs.move(array) は一括で正しく処理してくれる
+        if (activeTabSourceWindowId !== targetWindowId) {
+          await chrome.tabs.move(tabsToMove, { windowId: targetWindowId, index: targetIndex });
         } else {
-          await chrome.tabs.move(active.id, { index: targetIndex });
+          await chrome.tabs.move(tabsToMove, { index: targetIndex });
         }
 
-        if (sourceGroupId !== targetGroupId) {
-          if (targetGroupId !== -1) {
-            await chrome.tabs.group({ tabIds: active.id, groupId: targetGroupId });
-          } else {
-            await chrome.tabs.ungroup(active.id);
+        // 4. グループ設定の適用
+        if (targetGroupId !== -1) {
+          await chrome.tabs.group({ tabIds: tabsToMove, groupId: targetGroupId });
+        } else {
+          const currentTabs = await chrome.tabs.query({ windowId: targetWindowId });
+          const tabsToUngroup = tabsToMove.filter(id => {
+            const t = currentTabs.find(ct => ct.id === id);
+            return t && t.groupId !== -1;
+          });
+          if (tabsToUngroup.length > 0) {
+            await chrome.tabs.ungroup(tabsToUngroup);
           }
         }
       } else if (activeType === 'group') {
-        // グループの移動ロジック
         await chrome.tabGroups.move(active.id, { windowId: targetWindowId, index: targetIndex });
       }
 
+      // 最後に一度だけ更新
       updateTabs();
+      setTimeout(() => { isInternalChange.current = false; }, 500);
     } catch (error) {
       console.error('Failed to move item:', error);
       updateTabs();
+      isInternalChange.current = false;
     }
   };
 
@@ -416,15 +826,45 @@ const Popup = () => {
   };
 
   useEffect(() => {
-    updateTabs();
+    // 初期選択状態の取得
+    const initSelection = async () => {
+      try {
+        const highlightedTabs = await chrome.tabs.query({ highlighted: true });
+        isInternalChange.current = true;
+        setSelectedTabIds(highlightedTabs.map(t => t.id));
+        setTimeout(() => { isInternalChange.current = false; }, 100);
+      } catch (e) {
+        console.error('Failed to get initial highlights:', e);
+      }
+    };
+    initSelection();
+
+    const handleHighlighted = async () => {
+      if (isInternalChange.current || isLassoingRef.current) return;
+      try {
+        const tabs = await chrome.tabs.query({ highlighted: true });
+        isInternalChange.current = true;
+        setSelectedTabIds(tabs.map(t => t.id));
+        setTimeout(() => { isInternalChange.current = false; }, 100);
+        // タブのアクティブ状態なども更新するために updateTabs も呼ぶ
+        updateTabs();
+      } catch (e) {
+        console.error('Failed to sync Chrome highlights to extension:', e);
+      }
+    };
 
     chrome.tabs.onCreated.addListener(updateTabs);
     chrome.tabs.onRemoved.addListener(updateTabs);
     chrome.tabs.onUpdated.addListener(updateTabs);
-    chrome.tabs.onActivated.addListener(updateTabs);
+    chrome.tabs.onActivated.addListener(handleHighlighted);
+    chrome.tabs.onHighlighted.addListener(handleHighlighted);
     chrome.tabGroups.onCreated.addListener(updateTabs);
     chrome.tabGroups.onUpdated.addListener(updateTabs);
     chrome.tabGroups.onRemoved.addListener(updateTabs);
+    chrome.windows.onFocusChanged.addListener(updateTabs);
+
+    // 初期表示
+    updateTabs();
 
     // ストレージから設定を読み込む
     loadStatus();
@@ -433,7 +873,8 @@ const Popup = () => {
       chrome.tabs.onCreated.removeListener(updateTabs);
       chrome.tabs.onRemoved.removeListener(updateTabs);
       chrome.tabs.onUpdated.removeListener(updateTabs);
-      chrome.tabs.onActivated.removeListener(updateTabs);
+      chrome.tabs.onActivated.removeListener(handleHighlighted);
+      chrome.tabs.onHighlighted.removeListener(handleHighlighted);
       chrome.windows.onFocusChanged.removeListener(updateTabs);
       chrome.tabGroups.onCreated.removeListener(updateTabs);
       chrome.tabGroups.onUpdated.removeListener(updateTabs);
@@ -441,15 +882,75 @@ const Popup = () => {
     };
   }, []);
 
-  // タブの更新後に検索を再適用
   useEffect(() => {
     if (searchText) {
       applySearch(windowTabs, searchText, filterMode);
     }
   }, [windowTabs]);
 
+  // Extension -> Chrome sync
+  useEffect(() => {
+    if (isInternalChange.current || isLassoing) return;
+
+    const syncToChrome = async () => {
+      try {
+        const tabs = await chrome.tabs.query({});
+        const windows = await chrome.windows.getAll();
+
+        // 選択されたタブをウィンドウごとにグループ化
+        const windowGroups = selectedTabIds.reduce((acc, id) => {
+          const tab = tabs.find(t => t.id === id);
+          if (tab) {
+            if (!acc[tab.windowId]) acc[tab.windowId] = [];
+            acc[tab.windowId].push(tab);
+          }
+          return acc;
+        }, {});
+
+        isInternalChange.current = true;
+
+        // 全てのウィンドウに対してループを回す（選択されていないウィンドウも対象）
+        for (const win of windows) {
+          const winId = win.id;
+          const selectedTabsInWin = windowGroups[winId] || [];
+
+          // 当該ウィンドウで現在アクティブなタブを特定
+          const activeTabInWin = tabs.find(t => t.windowId === winId && t.active);
+
+          let indices = selectedTabsInWin.map(t => t.index);
+
+          // アクティブなタブをハイライトに含める（ポップアップ保護のため）
+          if (activeTabInWin) {
+            if (!indices.includes(activeTabInWin.index)) {
+              indices.push(activeTabInWin.index);
+            }
+            // アクティブなタブを優先してフォーカス維持
+            const activeIndex = activeTabInWin.index;
+            indices = [activeIndex, ...indices.filter(i => i !== activeIndex)];
+          }
+
+          // indices が空になることはない（activeTabInWin が必ずあるため）
+          await chrome.tabs.highlight({
+            windowId: winId,
+            tabs: indices
+          });
+        }
+
+        setTimeout(() => { isInternalChange.current = false; }, 500);
+      } catch (e) {
+        console.error('Failed to sync selection to Chrome:', e);
+        isInternalChange.current = false;
+      }
+    };
+
+    syncToChrome();
+  }, [selectedTabIds, isLassoing]);
+
   return (
-    <div className={`${styles.popupMain} ${isSidePanelMode ? styles.sidePanelMode : ''}`}>
+    <div
+      className={`${styles.popupMain} ${isSidePanelMode ? styles.sidePanelMode : ''}`}
+      onMouseDown={handleMouseDown}
+    >
       <Header
         searchText={searchText}
         setSearchText={handleSearchChange}
@@ -480,6 +981,9 @@ const Popup = () => {
                 filterMode={filterMode}
                 existingGroups={Object.values(groups)}
                 onTabReorder={updateTabs}
+                selectedTabIds={selectedTabIds}
+                selectedGroupIds={selectedGroupIds}
+                onSelect={handleSelect}
               />
             ))
           ) : (
@@ -487,16 +991,53 @@ const Popup = () => {
               <p>No tabs found.</p>
             </div>
           )}
-          <Footer windowCount={displayTabs.length} allTabCount={allTabCount} />
+          <Footer
+            windowCount={displayTabs.length}
+            allTabCount={allTabCount}
+            selectedCount={selectedTabIds.length + selectedGroupIds.length}
+            onMenuClick={handleFooterMenuClick}
+          />
         </div>
-        <DragOverlay>
+
+        {footerMenuOpen && (
+          <DropdownMenu
+            items={getBulkMenuItems()}
+            anchorRef={{ current: footerMenuAnchorRef.current }}
+            onClose={() => setFooterMenuOpen(false)}
+          />
+        )}
+
+        {isBulkGroupDialogOpen && (
+          <GroupDialog
+            onCancel={() => setIsBulkGroupDialogOpen(false)}
+            onConfirm={handleCreateBulkGroup}
+          />
+        )}
+        {selectionBox && (
+          <div
+            className={styles.selectionBox}
+            style={{
+              left: Math.min(selectionBox.startX, selectionBox.currentX) + 'px',
+              top: Math.min(selectionBox.startY, selectionBox.currentY) + 'px',
+              width: Math.abs(selectionBox.startX - selectionBox.currentX) + 'px',
+              height: Math.abs(selectionBox.startY - selectionBox.currentY) + 'px'
+            }}
+          />
+        )}
+        <DragOverlay dropAnimation={null}>
           {activeDragTab ? (
             <div className={styles.dragOverlay}>
-              <TabItem
-                tabDate={activeDragTab}
-                windowId={activeDragTab.windowId}
-                isDragging={true}
-              />
+              <div className={styles.tabItemStub}>
+                {activeDragTab.favIconUrl && (
+                  <img src={activeDragTab.favIconUrl} className={styles.faviconStub} alt="" />
+                )}
+                <span className={styles.titleStub}>{activeDragTab.title}</span>
+              </div>
+              {selectedTabIds.length > 1 && selectedTabIds.includes(activeDragTab.id) && (
+                <div className={styles.dragBadge}>
+                  {selectedTabIds.length}
+                </div>
+              )}
             </div>
           ) : activeDragGroup ? (
             <div className={styles.dragOverlay}>

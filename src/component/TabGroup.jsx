@@ -2,14 +2,36 @@
 import React, { useState, useRef } from 'react';
 import styles from './TabGroup.module.css';
 import DropdownMenu from './DropdownMenu';
+import MenuButton from './MenuButton';
 import GroupDialog from './GroupDialog';
 import GroupCloseDialog from './GroupCloseDialog';
 import ExpandIcon from './ExpandIcon';
 import CloseIcon from './CloseIcon';
 import { CHROME_COLORS } from './GroupDialog';
 
-const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true, onGroupUpdate }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpenState);
+const TabGroup = ({
+    groupInfo,
+    children,
+    className = '',
+    defaultOpenState = true,
+    onGroupUpdate,
+    isSelected,
+    onSelect,
+    isOpen: controlledIsOpen,
+    onToggle,
+    headerOnly = false
+}) => {
+    const [internalIsOpen, setInternalIsOpen] = useState(defaultOpenState);
+    const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+    const toggleOpen = () => {
+        if (onToggle) {
+            onToggle(!isOpen);
+        } else {
+            setInternalIsOpen(!isOpen);
+        }
+    };
+
     const [isHovered, setIsHovered] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -95,38 +117,44 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
     // 色の値をhexコードに変換
     const groupColorHex = CHROME_COLORS.find(c => c.value === groupInfo.color)?.hex || '#1a73e8';
 
+    const handleHeaderClick = (e) => {
+        if (onSelect) {
+            onSelect(groupInfo.id, e, 'group');
+        }
+    };
+
     return (
         <div className={`${styles.groupContainer} ${className}`}>
-            <h3 className={styles.groupTitle}
+            <h3 className={`${styles.groupTitle} ${isSelected ? styles.selected : ''}`}
                 style={{
                     '--group-color': groupColorHex,
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
+                onClick={handleHeaderClick}
+                data-group-id={groupInfo.id}
             >
-                <div className={styles.groupHeaderLeft} onClick={() => setIsOpen(!isOpen)}>
+                <div className={styles.groupHeaderLeft}>
                     <span className={styles.groupTitleText}>
                         {groupInfo.title || 'Tab Group'}
                     </span>
                     <ExpandIcon
                         isOpen={isOpen}
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleOpen();
+                        }}
                         className={styles.toggleIcon}
                     />
                 </div>
 
                 <div className={styles.menuContainer}>
                     {(isHovered || menuOpen) && (
-                        <button
+                        <MenuButton
                             ref={menuButtonRef}
-                            className={styles.menuButton}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setMenuOpen(!menuOpen);
-                            }}
-                        >
-                            ⋮
-                        </button>
+                            isOpen={menuOpen}
+                            onClick={() => setMenuOpen(!menuOpen)}
+                        />
                     )}
 
                     {menuOpen && (
@@ -175,11 +203,13 @@ const TabGroup = ({ groupInfo, children, className = '', defaultOpenState = true
                 />
             )}
 
-            <div className={`${styles.groupTabs} ${isOpen ? styles.open : ''}`}>
-                {children}
-            </div>
+            {!headerOnly && (
+                <div className={`${styles.groupTabs} ${isOpen ? styles.open : ''}`}>
+                    {children}
+                </div>
+            )}
         </div >
     );
 };
 
-export default TabGroup;
+export default React.memo(TabGroup);

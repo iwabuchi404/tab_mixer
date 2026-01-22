@@ -2,9 +2,10 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import TabItem from './TabItem';
+import DragHandle from './DragHandle';
 import styles from './SortableTabItem.module.css';
 
-const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder }) => {
+const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder, isSelected, onSelect }) => {
   // タブデータの安全性チェック
   if (!tabData || !tabData.id) {
     console.warn('Invalid tab data in SortableTabItem:', tabData);
@@ -38,25 +39,15 @@ const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder }) =>
     <div
       ref={setNodeRef}
       style={style}
-      className={`${styles.sortableContainer} ${isDragging ? styles.dragging : ''} ${tabData.active ? styles.activeTab : ''}`}
+      className={`${styles.sortableContainer} ${isDragging ? styles.dragging : ''} ${tabData.active ? styles.activeTab : ''} ${isSelected ? styles.selected : ''}`}
+      data-tab-id={tabData.id}
     >
-      <div className={styles.dragHandle} {...attributes} {...listeners}>
-        <svg
-          width="8"
-          height="16"
-          viewBox="0 0 8 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className={styles.dragIcon}
-        >
-          <circle cx="2" cy="3" r="1" fill="currentColor" />
-          <circle cx="6" cy="3" r="1" fill="currentColor" />
-          <circle cx="2" cy="8" r="1" fill="currentColor" />
-          <circle cx="6" cy="8" r="1" fill="currentColor" />
-          <circle cx="2" cy="13" r="1" fill="currentColor" />
-          <circle cx="6" cy="13" r="1" fill="currentColor" />
-        </svg>
-      </div>
+      <DragHandle
+        attributes={attributes}
+        listeners={listeners}
+        isSelected={isSelected}
+        className={`${tabData.active ? styles.activeTabHandle : ''} ${styles.baseDragHandle}`}
+      />
 
       <TabItem
         tabData={tabData}
@@ -64,9 +55,11 @@ const SortableTabItem = ({ tabData, windowId, existingGroups, onTabReorder }) =>
         isDragging={isDragging}
         existingGroups={existingGroups}
         onTabReorder={onTabReorder}
+        isSelected={isSelected}
+        onSelect={onSelect}
       />
     </div>
   );
 };
 
-export default SortableTabItem;
+export default React.memo(SortableTabItem);

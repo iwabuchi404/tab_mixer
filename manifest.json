@@ -7,6 +7,7 @@
     "60": "icons/icon60.png"
   },
   "permissions": [
+    "tabs",
     "tabGroups",
     "windows",
     "storage",
