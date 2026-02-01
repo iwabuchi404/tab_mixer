@@ -23,6 +23,8 @@
     overflow: hidden;
     box-sizing: border-box;
     background-color: transparent;
+    border-left: 4px solid transparent;
+
 }
 
 .headerRow.selected {

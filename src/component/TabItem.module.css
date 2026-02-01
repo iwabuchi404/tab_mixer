@@ -26,7 +26,20 @@
   background-color: transparent !important;
 }
 
-.highlighted {}
+
+
+.discarded {
+  opacity: 0.7;
+}
+
+.discarded .favicon {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+
+.discarded .tabTitle {
+  color: var(--text-secondary);
+}
 
 .tabContent {
   display: flex;

@@ -105,6 +105,23 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
     }
   };
 
+  // タブをスリープ状態にする関数
+  const handleDiscardTab = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (isDragging || tabData.active || tabData.discarded) return;
+
+    // メニューを閉じるなどの処理が完了してから実行されるよう、わずかに遅延させる
+    // これにより、API呼び出しによるフォーカス喪失でポップアップが閉じるのを防ぐ
+    setTimeout(async () => {
+      try {
+        await chrome.tabs.discard(tabData.id);
+        if (onTabReorder) onTabReorder();
+      } catch (error) {
+        console.error('Error discarding tab:', error);
+      }
+    }, 100);
+  };
+
   // メニュー項目を生成
   const getMenuItems = () => {
     const items = [
@@ -112,6 +129,12 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
         label: 'New Group',
         icon: '📁',
         onClick: () => setDialogOpen(true)
+      },
+      {
+        label: 'Sleep (Discard)',
+        icon: '💤',
+        disabled: tabData.active || tabData.discarded,
+        onClick: handleDiscardTab
       }
     ];
 
@@ -140,7 +163,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
 
   return (
     <div
-      className={`${styles.tabItem} ${tabData.active ? styles.activeTab : ''} ${isSelected ? styles.selected : ''} ${tabData.highlighted ? styles.highlighted : ''} ${isDragging ? styles.dragging : ''} ${className}`}
+      className={`${styles.tabItem} ${tabData.active ? styles.activeTab : ''} ${isSelected ? styles.selected : ''} ${tabData.discarded ? styles.discarded : ''} ${tabData.highlighted ? styles.highlighted : ''} ${isDragging ? styles.dragging : ''} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

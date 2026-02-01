@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragOverlay,
+  MeasuringStrategy,
 } from '@dnd-kit/core';
 import {
   sortableKeyboardCoordinates,
@@ -38,11 +40,14 @@ const Popup = () => {
   const isLassoingRef = useRef(false);
   const tabRectsCache = useRef([]);
   const lassoStartPos = useRef({ x: 0, y: 0 });
+  const lassoStartScrollTop = useRef(0);
   const [footerMenuOpen, setFooterMenuOpen] = useState(false);
   const footerMenuAnchorRef = useRef(null);
   const [isBulkGroupDialogOpen, setIsBulkGroupDialogOpen] = useState(false);
   const isInternalChange = useRef(false);
   const hasDragged = useRef(false);
+  const scrollInterval = useRef(null);
+  const mousePosRef = useRef({ x: 0, y: 0 });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -344,13 +349,16 @@ const Popup = () => {
       setLastClickedId(null);
     }
 
+    const scrollTopValue = window.pageYOffset || document.documentElement.scrollTop;
     setIsLassoing(true);
-    lassoStartPos.current = { x: e.clientX, y: e.clientY };
+    isLassoingRef.current = true;
+    lassoStartPos.current = { x: e.pageX, y: e.pageY };
+    lassoStartScrollTop.current = scrollTopValue;
     setSelectionBox({
-      startX: e.clientX,
-      startY: e.clientY,
-      currentX: e.clientX,
-      currentY: e.clientY
+      startX: e.pageX,
+      startY: e.pageY,
+      currentX: e.pageX,
+      currentY: e.pageY
     });
 
     // タブとグループの座標をキャッシュ
@@ -358,19 +366,32 @@ const Popup = () => {
     const groupItems = document.querySelectorAll('[data-group-id]');
     const cache = [];
 
+    const scrollTopForItems = window.pageYOffset || document.documentElement.scrollTop;
     tabItems.forEach(el => {
+      const rect = el.getBoundingClientRect();
       cache.push({
         id: Number(el.getAttribute('data-tab-id')),
         type: 'tab',
-        rect: el.getBoundingClientRect()
+        rect: {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top + scrollTopForItems,
+          bottom: rect.bottom + scrollTopForItems
+        }
       });
     });
 
     groupItems.forEach(el => {
+      const rect = el.getBoundingClientRect();
       cache.push({
         id: Number(el.getAttribute('data-group-id')),
         type: 'group',
-        rect: el.getBoundingClientRect()
+        rect: {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top + scrollTop,
+          bottom: rect.bottom + scrollTop
+        }
       });
     });
 
@@ -384,8 +405,10 @@ const Popup = () => {
 
       const startX = lassoStartPos.current.x;
       const startY = lassoStartPos.current.y;
-      const currentX = e.clientX;
-      const currentY = e.clientY;
+      const currentX = e.pageX;
+      const currentY = e.pageY;
+
+      mousePosRef.current = { x: e.clientX, y: e.clientY };
 
       setSelectionBox({
         startX,
@@ -394,6 +417,40 @@ const Popup = () => {
         currentY
       });
 
+      // オートスクロール判定
+      const scrollThreshold = 50;
+      const viewportHeight = window.innerHeight;
+      const mouseY = e.clientY;
+
+      if (mouseY < scrollThreshold || mouseY > viewportHeight - scrollThreshold) {
+        if (!scrollInterval.current) {
+          scrollInterval.current = setInterval(() => {
+            const speed = 10;
+            const direction = mousePosRef.current.y < scrollThreshold ? -1 : 1;
+            window.scrollBy(0, direction * speed);
+
+            // スクロール中も選択範囲を再計算
+            const currentST = window.pageYOffset || document.documentElement.scrollTop;
+            const currentSL = window.pageXOffset || document.documentElement.scrollLeft;
+            updateLassoSelection(
+              lassoStartPos.current.x,
+              lassoStartPos.current.y,
+              mousePosRef.current.x + currentSL, // page relative
+              mousePosRef.current.y + currentST  // page relative
+            );
+          }, 16);
+        }
+      } else {
+        if (scrollInterval.current) {
+          clearInterval(scrollInterval.current);
+          scrollInterval.current = null;
+        }
+      }
+
+      updateLassoSelection(startX, startY, currentX, currentY);
+    };
+
+    const updateLassoSelection = (startX, startY, currentX, currentY) => {
       // 移動距離が十分な場合のみ、リアルタイムで選択状態を更新
       const dist = Math.sqrt(Math.pow(startX - currentX, 2) + Math.pow(startY - currentY, 2));
       if (dist > 5) {
@@ -440,6 +497,11 @@ const Popup = () => {
       isLassoingRef.current = false;
       setSelectionBox(null);
       tabRectsCache.current = [];
+
+      if (scrollInterval.current) {
+        clearInterval(scrollInterval.current);
+        scrollInterval.current = null;
+      }
 
       // ドラッグが発生していた場合、この後のクリックイベントを無効化する
       if (hasDragged.current) {
@@ -582,6 +644,49 @@ const Popup = () => {
     }
   };
 
+  const handleBulkDiscard = async () => {
+    if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    try {
+      const tabsInSelectedGroups = [];
+      for (const sgid of selectedGroupIds) {
+        const tabs = await chrome.tabs.query({ groupId: sgid });
+        tabsInSelectedGroups.push(...tabs.map(t => t.id));
+      }
+      const allTabIds = Array.from(new Set([...selectedTabIds, ...tabsInSelectedGroups]));
+
+      if (allTabIds.length > 0) {
+        // 現在アクティブなタブ ID を検索。アクティブなタブはスリープさせられない。
+        const activeTabs = await chrome.tabs.query({ active: true });
+        const activeTabIds = activeTabs.map(t => t.id);
+
+        const discardableTabIds = allTabIds.filter(id => !activeTabIds.includes(id));
+
+        if (discardableTabIds.length > 0) {
+          isInternalChange.current = true;
+          // ウィンドウが閉じないよう、かつ確実に全てのタブを処理するため、順次実行
+          const executeSequentialDiscard = async () => {
+            for (const id of discardableTabIds) {
+              try {
+                await chrome.tabs.discard(id);
+                // 各API呼び出し後にわずかなディレイを挟み、ブラウザの挙動を安定させる
+                await new Promise(resolve => setTimeout(resolve, 50));
+              } catch (err) {
+                console.warn(`Failed to discard tab ${id}:`, err);
+              }
+            }
+            setSelectedTabIds([]);
+            setSelectedGroupIds([]);
+            isInternalChange.current = false;
+            updateTabs();
+          };
+          executeSequentialDiscard();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to discard selected items:', error);
+    }
+  };
+
   const getBulkMenuItems = () => {
     const totalSelected = selectedTabIds.length + selectedGroupIds.length;
     const items = [
@@ -599,6 +704,11 @@ const Popup = () => {
         label: 'New Group',
         icon: '📁',
         onClick: () => setIsBulkGroupDialogOpen(true)
+      },
+      {
+        label: `Sleep ${totalSelected} Items`,
+        icon: '💤',
+        onClick: handleBulkDiscard
       }
     ];
 
@@ -961,7 +1071,12 @@ const Popup = () => {
       />
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={closestCorners}
+        measuring={{
+          droppable: {
+            strategy: MeasuringStrategy.Always,
+          },
+        }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}

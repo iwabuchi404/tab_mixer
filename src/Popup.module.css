@@ -84,7 +84,7 @@
 }
 
 .selectionBox {
-  position: fixed;
+  position: absolute;
   border: 1px solid var(--lasso-border);
   background-color: var(--lasso-bg);
   pointer-events: none;

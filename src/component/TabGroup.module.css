@@ -19,7 +19,6 @@
   font-size: 14px;
   text-overflow: ellipsis;
   border: solid 1px var(--border-color);
-  border-left: none;
   /* Sortable側のボーダーとつなげる */
   border-radius: 0 4px 4px 0;
   height: 34px;
