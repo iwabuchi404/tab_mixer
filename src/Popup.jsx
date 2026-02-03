@@ -19,6 +19,8 @@ import Footer from './component/footer';
 import TabItem from './component/TabItem';
 import DropdownMenu from './component/DropdownMenu';
 import GroupDialog from './component/GroupDialog';
+import GroupCloseDialog from './component/GroupCloseDialog';
+import BulkCloseDialog from './component/BulkCloseDialog';
 import { CHROME_COLORS } from './component/GroupDialog';
 import styles from './Popup.module.css';
 
@@ -44,6 +46,7 @@ const Popup = () => {
   const [footerMenuOpen, setFooterMenuOpen] = useState(false);
   const footerMenuAnchorRef = useRef(null);
   const [isBulkGroupDialogOpen, setIsBulkGroupDialogOpen] = useState(false);
+  const [isBulkCloseDialogOpen, setIsBulkCloseDialogOpen] = useState(false);
   const isInternalChange = useRef(false);
   const hasDragged = useRef(false);
   const scrollInterval = useRef(null);
@@ -537,6 +540,11 @@ const Popup = () => {
 
   const handleCloseSelectedTabs = async () => {
     if (selectedTabIds.length === 0 && selectedGroupIds.length === 0) return;
+    setIsBulkCloseDialogOpen(true);
+  };
+
+  const handleConfirmBulkClose = async () => {
+    setIsBulkCloseDialogOpen(false);
     try {
       const tabsInSelectedGroups = [];
       for (const groupId of selectedGroupIds) {
@@ -553,6 +561,26 @@ const Popup = () => {
       }
     } catch (error) {
       console.error('Failed to close selected tabs:', error);
+    }
+  };
+
+  const handleConfirmBulkUngroup = async () => {
+    setIsBulkCloseDialogOpen(false);
+    try {
+      if (selectedGroupIds.length > 0) {
+        for (const groupId of selectedGroupIds) {
+          const tabs = await chrome.tabs.query({ groupId });
+          const tabIds = tabs.map(t => t.id);
+          if (tabIds.length > 0) {
+            await chrome.tabs.ungroup(tabIds);
+          }
+        }
+        setSelectedTabIds([]);
+        setSelectedGroupIds([]);
+        updateTabs();
+      }
+    } catch (error) {
+      console.error('Failed to ungroup selected items:', error);
     }
   };
 
@@ -1126,6 +1154,15 @@ const Popup = () => {
           <GroupDialog
             onCancel={() => setIsBulkGroupDialogOpen(false)}
             onConfirm={handleCreateBulkGroup}
+          />
+        )}
+        {isBulkCloseDialogOpen && (
+          <BulkCloseDialog
+            selectedCount={selectedTabIds.length + selectedGroupIds.length}
+            groupCount={selectedGroupIds.length}
+            onUngroup={handleConfirmBulkUngroup}
+            onCloseTabs={handleConfirmBulkClose}
+            onCancel={() => setIsBulkCloseDialogOpen(false)}
           />
         )}
         {selectionBox && (

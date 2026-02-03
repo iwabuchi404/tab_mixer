@@ -91,6 +91,25 @@ const TabGroup = ({
         }
     };
 
+    // グループ内のすべてのタブをスリープ状態にする
+    const handleSleepAllTabs = async () => {
+        try {
+            const tabs = await chrome.tabs.query({ groupId: groupInfo.id });
+            const discardableTabs = tabs.filter(t => !t.active && !t.discarded);
+
+            if (discardableTabs.length > 0) {
+                // ポップアップが閉じるのを防ぐため、少しずつ遅延させて実行
+                for (const tab of discardableTabs) {
+                    await chrome.tabs.discard(tab.id);
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                if (onGroupUpdate) onGroupUpdate();
+            }
+        } catch (error) {
+            console.error('Failed to sleep all tabs in group:', error);
+        }
+    };
+
     const getGroupMenuItems = () => [
         {
             label: 'Rename',
@@ -111,6 +130,11 @@ const TabGroup = ({
             label: 'Close Group',
             icon: '🗑️',
             onClick: () => setConfirmDialogOpen(true)
+        },
+        {
+            label: 'Sleep Group',
+            icon: '💤',
+            onClick: handleSleepAllTabs
         }
     ];
 
