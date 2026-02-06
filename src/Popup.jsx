@@ -22,6 +22,8 @@ import GroupDialog from './component/GroupDialog';
 import GroupCloseDialog from './component/GroupCloseDialog';
 import BulkCloseDialog from './component/BulkCloseDialog';
 import { CHROME_COLORS } from './component/GroupDialog';
+import db from './db';
+import { v4 as uuidv4 } from 'uuid';
 import styles from './Popup.module.css';
 
 const Popup = () => {
@@ -51,6 +53,7 @@ const Popup = () => {
   const hasDragged = useRef(false);
   const scrollInterval = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
+  const [windowNames, setWindowNames] = useState({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -343,10 +346,14 @@ const Popup = () => {
     // ドラッグハンドルなら完全に無視（dnd-kitに任せる）
     if (e.target.closest('[data-drag-handle]')) return;
 
-    // 背景をクリックした場合は選択解除
     const isTab = e.target.closest('[data-tab-id]');
     const isGroup = e.target.closest('[data-group-id]');
-    if (!isTab && !isGroup && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+
+    // タブやグループの上でのクリックなら、ラッソ選択を開始させない
+    // (通常クリックによる単一選択や、Ctrl/Shiftクリックは各コンポーネント側で処理される)
+    if (isTab || isGroup) return;
+
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
       setSelectedTabIds([]);
       setSelectedGroupIds([]);
       setLastClickedId(null);
@@ -392,8 +399,8 @@ const Popup = () => {
         rect: {
           left: rect.left,
           right: rect.right,
-          top: rect.top + scrollTop,
-          bottom: rect.bottom + scrollTop
+          top: rect.top + scrollTopForItems,
+          bottom: rect.bottom + scrollTopForItems
         }
       });
     });
@@ -1021,6 +1028,44 @@ const Popup = () => {
   }, []);
 
   useEffect(() => {
+    const loadWindowNames = async () => {
+      try {
+        const windows = await db.windows.toArray();
+        const names = {};
+        windows.forEach(w => {
+          if (w.chromeWindowId) {
+            names[w.chromeWindowId] = w.name;
+          }
+        });
+        setWindowNames(names);
+      } catch (error) {
+        console.error('Failed to load window names:', error);
+      }
+    };
+    loadWindowNames();
+  }, []);
+
+  const handleRenameWindow = async (chromeWindowId, name) => {
+    try {
+      setWindowNames(prev => ({ ...prev, [chromeWindowId]: name }));
+
+      const existing = await db.windows.where('chromeWindowId').equals(chromeWindowId).first();
+      if (existing) {
+        await db.windows.update(existing.id, { name });
+      } else {
+        await db.windows.add({
+          id: uuidv4(),
+          chromeWindowId,
+          name,
+          status: 'open'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save window name:', error);
+    }
+  };
+
+  useEffect(() => {
     if (searchText) {
       applySearch(windowTabs, searchText, filterMode);
     }
@@ -1118,12 +1163,13 @@ const Popup = () => {
                 order={window.order}
                 groups={window.groups}
                 windowId={window.windowId}
-                listTitle={`Window ID:${window.windowId}`}
+                listTitle={windowNames[window.windowId] || `Window ID:${window.windowId}`}
                 focused={window.focused}
                 currentWindow={window.currentWindow}
                 filterMode={filterMode}
                 existingGroups={Object.values(groups)}
                 onTabReorder={updateTabs}
+                onRenameWindow={handleRenameWindow}
                 selectedTabIds={selectedTabIds}
                 selectedGroupIds={selectedGroupIds}
                 onSelect={handleSelect}

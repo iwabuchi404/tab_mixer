@@ -9,13 +9,16 @@ import TabItem from './TabItem';
 import SortableTabItem from './SortableTabItem';
 import TabGroup from './TabGroup';
 import SortableTabGroup from './SortableTabGroup';
+import WindowCloseDialog from './WindowCloseDialog';
+import EditIcon from './EditIcon';
 import ExpandIcon from './ExpandIcon';
 import CloseIcon from './CloseIcon';
-import WindowCloseDialog from './WindowCloseDialog';
+import WindowDialog from './WindowDialog';
 
-const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, existingGroups = [], selectedTabIds = [], selectedGroupIds = [], onSelect }) => {
+const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, onTabReorder, onRenameWindow, existingGroups = [], selectedTabIds = [], selectedGroupIds = [], onSelect }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleCloseWindow = async () => {
     try {
@@ -26,6 +29,20 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
     }
   };
 
+  const handleStartEdit = (e) => {
+    e.stopPropagation();
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveName = (newName) => {
+    setIsDialogOpen(false);
+    if (newName.trim() && newName !== listTitle) {
+      if (onRenameWindow) {
+        onRenameWindow(windowId, newName.trim());
+      }
+    }
+  };
+
   // ソート可能なアイテムのIDリストを作成
   const sortableItems = order ? order.map(item => item.id) : [];
 
@@ -33,7 +50,13 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
     <div className={styles.container}>
       <h2 className={`${styles.header} ${currentWindow ? styles.currentWindow : ''} ${isOpen ? styles.open : ''}`}>
         <div className={styles.headerLeft}>
-          {listTitle}
+          <span className={styles.windowNameText}>
+            {listTitle}
+          </span>
+          <EditIcon
+            onClick={handleStartEdit}
+            className={styles.windowEditIcon}
+          />
           <ExpandIcon
             isOpen={isOpen}
             onClick={() => setIsOpen(!isOpen)}
@@ -55,6 +78,14 @@ const TabList = ({ windowId, order, tabList, groups, listTitle, currentWindow, o
         <WindowCloseDialog
           onConfirm={handleCloseWindow}
           onCancel={() => setConfirmDialogOpen(false)}
+        />
+      )}
+
+      {isDialogOpen && (
+        <WindowDialog
+          initialName={listTitle}
+          onConfirm={handleSaveName}
+          onCancel={() => setIsDialogOpen(false)}
         />
       )}
 

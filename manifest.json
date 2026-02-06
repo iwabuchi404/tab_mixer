@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Mixer",
-  "version": "1.8",
+  "version": "1.9",
   "description": "A Chrome extension for efficient management of multiple windows and tabs.",
   "icons": {
     "60": "icons/icon60.png"

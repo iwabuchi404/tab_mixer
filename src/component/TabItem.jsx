@@ -68,6 +68,12 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
     }
   };
 
+  const handleContainerClick = (e) => {
+    // ボタンなどの子要素でのクリックなら無視（個別のハンドラーが処理する）
+    if (e.target.closest('button')) return;
+    handleTabClick(e);
+  };
+
   // 新しいグループを作成
   const handleCreateNewGroup = async ({ name, color }) => {
     try {
@@ -166,6 +172,7 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
       className={`${styles.tabItem} ${tabData.active ? styles.activeTab : ''} ${isSelected ? styles.selected : ''} ${tabData.discarded ? styles.discarded : ''} ${tabData.highlighted ? styles.highlighted : ''} ${isDragging ? styles.dragging : ''} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleContainerClick}
     >
       <div className={styles.tabContent}>
         {tabData.favIconUrl && !faviconError ? (
@@ -179,8 +186,14 @@ const TabItem = ({ tabData, windowId, isDragging = false, existingGroups = [], o
           <div className={styles.defaultFavicon} />
         )}
         <button
-          onClick={handleTabClick}
-          onMouseDown={(e) => mousedownEvent(e, tabData.id, windowId)}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleTabClick(e);
+          }}
+          onMouseDown={(e) => {
+            if (e.button !== 0) e.stopPropagation();
+            mousedownEvent(e, tabData.id, windowId);
+          }}
           className={styles.tabTitle}
           title={tabData.url || tabData.title || 'Untitled Tab'}
           disabled={isDragging}
